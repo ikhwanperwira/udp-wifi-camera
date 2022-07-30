@@ -1,131 +1,227 @@
 #include <stdio.h>
 
+#include "cam_cfg.h"
 #include "driver/gpio.h"
-#include "driver/uart.h"
 #include "esp_camera.h"
 #include "esp_log.h"
+#include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
 #include "freertos/task.h"
+#include "lwip/err.h"
+#include "lwip/sys.h"
+#include "nvs_flash.h"
 #include "string.h"
+#include "uart_cmd.h"
+
+// WiFI Setup
+#define WIFI_SSID "okelah"
+#define WIFI_PASW "12345678"
+#define WIFI_AUTH WIFI_AUTH_WPA2_PSK
+#define MAX_TRY 10
 
 // ESP32CAM AI-Thinker default LED PIN
 #define ESP32CAM_PIN_BUILT_IN_LED GPIO_NUM_33
 #define LED_ON 0
 #define LED_OFF 1
 
-// ESP32CAM AI-Thinker default UART PIN
-#define UART_PIN_TXD GPIO_NUM_1
-#define UART_PIN_RXD GPIO_NUM_3
-#define UART_PIN_RTS UART_PIN_NO_CHANGE
-#define UART_PIN_CTS UART_PIN_NO_CHANGE
-#define UART_BUF_SIZE 1024
+/* The event group allows multiple bits for each event, but we only care about
+ * two events:
+ * - we are connected to the AP with an IP
+ * - we failed to connect after the maximum amount of retries */
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT BIT1
 
-// CAMERA OV2640 PIN
-#define CAM_PIN_PWDN GPIO_NUM_32
-#define CAM_PIN_RESET GPIO_NUM_NC  // software reset will be performed
-#define CAM_PIN_XCLK GPIO_NUM_0
-#define CAM_PIN_SIOD GPIO_NUM_26
-#define CAM_PIN_SIOC GPIO_NUM_27
-#define CAM_PIN_D7 GPIO_NUM_35
-#define CAM_PIN_D6 GPIO_NUM_34
-#define CAM_PIN_D5 GPIO_NUM_39
-#define CAM_PIN_D4 GPIO_NUM_36
-#define CAM_PIN_D3 GPIO_NUM_21
-#define CAM_PIN_D2 GPIO_NUM_19
-#define CAM_PIN_D1 GPIO_NUM_18
-#define CAM_PIN_D0 GPIO_NUM_5
-#define CAM_PIN_VSYNC GPIO_NUM_25
-#define CAM_PIN_HREF GPIO_NUM_23
-#define CAM_PIN_PCLK GPIO_NUM_22
+/* FreeRTOS event group to signal when we are connected*/
+static EventGroupHandle_t s_wifi_event_group;
 
 static const char PROG_TAG[] = "udp-wifi-camera";
+static int s_retry_num = 0;
 
-static const camera_config_t camera_config = {
-    .pin_pwdn = CAM_PIN_PWDN,
-    .pin_reset = CAM_PIN_RESET,
-    .pin_xclk = CAM_PIN_XCLK,
-    .pin_sscb_sda = CAM_PIN_SIOD,
-    .pin_sscb_scl = CAM_PIN_SIOC,
-    .pin_d7 = CAM_PIN_D7,
-    .pin_d6 = CAM_PIN_D6,
-    .pin_d5 = CAM_PIN_D5,
-    .pin_d4 = CAM_PIN_D4,
-    .pin_d3 = CAM_PIN_D3,
-    .pin_d2 = CAM_PIN_D2,
-    .pin_d1 = CAM_PIN_D1,
-    .pin_d0 = CAM_PIN_D0,
-    .pin_vsync = CAM_PIN_VSYNC,
-    .pin_href = CAM_PIN_HREF,
-    .pin_pclk = CAM_PIN_PCLK,
-
-    .xclk_freq_hz = 16000000,  // EXPERIMENTAL: Set to 16MHz on ESP32-S2 or
-                               // ESP32-S3 to enable EDMA mode
-    .ledc_timer = LEDC_TIMER_0,
-    .ledc_channel = LEDC_CHANNEL_0,
-
-    .pixel_format = PIXFORMAT_JPEG,  // YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size =
-        FRAMESIZE_UXGA,  // QQVGA-QXGA Do not use sizes above QVGA when not JPEG
-
-    .jpeg_quality = 12,  // 0-63 lower number means higher quality
-    .fb_count =
-        1,  // if more than one, i2s runs in continuous mode. Use only with JPEG
-    .grab_mode = CAMERA_GRAB_WHEN_EMPTY  // CAMERA_GRAB_LATEST. Sets when
-                                         // buffers should be filled
-};
-
-static const uart_config_t uart_config = {
-    .baud_rate = 115200,
-    .data_bits = UART_DATA_8_BITS,
-    .parity = UART_PARITY_DISABLE,
-    .stop_bits = UART_STOP_BITS_1,
-    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-    .source_clk = UART_SCLK_APB,
-};
-
-static char uartBufr[UART_BUF_SIZE];
-static char uartBufw[UART_BUF_SIZE];
-
-esp_err_t led_init() {
-  gpio_pad_select_gpio(ESP32CAM_PIN_BUILT_IN_LED);
-  return gpio_set_direction(ESP32CAM_PIN_BUILT_IN_LED, GPIO_MODE_OUTPUT);
-}
-
-esp_err_t camera_init() { return esp_camera_init(&camera_config); }
-
-esp_err_t uart_init() {
-  esp_err_t err =
-      uart_driver_install(UART_NUM_0, UART_BUF_SIZE * 2, 0, 0, NULL, 0);
-  if (err & ESP_OK) {
-    uart_param_config(UART_NUM_0, &uart_config);
-    uart_set_pin(UART_NUM_0, UART_PIN_TXD, UART_PIN_RXD, UART_PIN_RTS,
-                 UART_PIN_CTS);
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int32_t event_id, void* event_data) {
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    esp_wifi_connect();
+  } else if (event_base == WIFI_EVENT &&
+             event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    if (s_retry_num < MAX_TRY) {
+      esp_wifi_connect();
+      s_retry_num++;
+      ESP_LOGI(PROG_TAG, "retry to connect to the AP");
+    } else {
+      xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+    }
+    ESP_LOGI(PROG_TAG, "connect to the AP fail");
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+    ESP_LOGI(PROG_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+    s_retry_num = 0;
+    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
   }
-  return err;
 }
+
+void wifi_init_sta(void) {
+  s_wifi_event_group = xEventGroupCreate();
+
+  ESP_ERROR_CHECK(esp_netif_init());
+
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+  esp_netif_create_default_wifi_sta();
+
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+  esp_event_handler_instance_t instance_any_id;
+  esp_event_handler_instance_t instance_got_ip;
+
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(
+      WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, &instance_any_id));
+  ESP_ERROR_CHECK(esp_event_handler_instance_register(
+      IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, &instance_got_ip));
+
+  wifi_config_t wifi_config = {
+      .sta =
+          {
+              .ssid = WIFI_SSID,
+              .password = WIFI_PASW,
+              /* Setting a password implies station will connect to all security
+               * modes including WEP/WPA. However these modes are deprecated and
+               * not advisable to be used. Incase your Access point doesn't
+               * support WPA2, these mode can be enabled by commenting below
+               * line */
+              .threshold.authmode = WIFI_AUTH,
+          },
+  };
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+  ESP_ERROR_CHECK(esp_wifi_start());
+
+  ESP_LOGI(PROG_TAG, "wifi_init_sta finished.");
+
+  /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or
+   * connection failed for the maximum number of re-tries (WIFI_FAIL_BIT). The
+   * bits are set by event_handler() (see above) */
+  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+                                         WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                                         pdFALSE, pdFALSE, portMAX_DELAY);
+
+  /* xEventGroupWaitBits() returns the bits before the call returned, hence we
+   * can test which event actually happened. */
+  if (bits & WIFI_CONNECTED_BIT) {
+    ESP_LOGI(PROG_TAG, "Connected to ap SSID:%s password:%s", WIFI_SSID,
+             WIFI_PASW);
+  } else if (bits & WIFI_FAIL_BIT) {
+    ESP_LOGI(PROG_TAG, "Failed to connect to SSID:%s, password:%s", WIFI_SSID,
+             WIFI_PASW);
+  } else {
+    ESP_LOGE(PROG_TAG, "UNEXPECTED EVENT");
+  }
+}
+
+void led_init() {
+  gpio_pad_select_gpio(ESP32CAM_PIN_BUILT_IN_LED);
+
+  if (gpio_set_direction(ESP32CAM_PIN_BUILT_IN_LED, GPIO_MODE_OUTPUT) ==
+      ESP_OK) {
+    uart_cmd_send("LED has been initialized!\n");
+    return;
+  }
+
+  ESP_LOGE(PROG_TAG, "LED init failure!\n");
+}
+
+void turn_on_led() {
+  if (gpio_set_level(ESP32CAM_PIN_BUILT_IN_LED, 0) == ESP_OK) {
+    uart_cmd_send("LED has been turned on!\n");
+    return;
+  }
+
+  ESP_LOGE(PROG_TAG, "LED turn on failure!\n");
+}
+
+void turn_off_led() {
+  if (gpio_set_level(ESP32CAM_PIN_BUILT_IN_LED, 1) == ESP_OK) {
+    uart_cmd_send("LED has been turned off!\n");
+    return;
+  }
+
+  ESP_LOGE(PROG_TAG, "LED turn off failure!\n");
+}
+
+static uint8_t is_camera_initialized = 0;
+
+void camera_init() {
+  if (is_camera_initialized) {
+    ESP_LOGE(PROG_TAG, "Cam already initialized!\n");
+    return;
+  }
+
+  if (esp_camera_init(&cam_cfg) == ESP_OK) {
+    uart_cmd_send("Camera has been initialized!\n");
+    is_camera_initialized = 1;
+    return;
+  }
+
+  ESP_LOGE(PROG_TAG, "Cam init failure!\n");
+}
+
+void camera_deinit() {
+  if (!is_camera_initialized) {
+    ESP_LOGE(PROG_TAG, "Cam already deinitialized!\n");
+    return;
+  }
+
+  if (esp_camera_deinit() == ESP_OK) {
+    uart_cmd_send("Camera has been deinitialized!\n");
+    is_camera_initialized = 0;
+    return;
+  }
+
+  ESP_LOGE(PROG_TAG, "Camera deinit failure!\n");
+}
+
+void interface_show() {}
 
 void app_main() {
-  ESP_ERROR_CHECK_WITHOUT_ABORT(led_init());
-  ESP_ERROR_CHECK_WITHOUT_ABORT(uart_init());
-  ESP_ERROR_CHECK_WITHOUT_ABORT(camera_init());
+  ESP_LOGI(PROG_TAG, "Start of program!");
+
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
+  if (uart_cmd_init(115200) == ESP_OK) {
+    uart_cmd_send("\nUART CMD has been initialized!\n");
+  } else {
+    ESP_LOGE(PROG_TAG, "UART CMD init failure!");
+  }
+
+  uart_cmd_send("WiFi setup: (" WIFI_SSID "|" WIFI_PASW ")\n");
 
   for (;;) {
-    int uartBufrLen = uart_read_bytes(UART_NUM_0, uartBufr, UART_BUF_SIZE,
-                                      20 / portTICK_PERIOD_MS);
-    uartBufr[uartBufrLen] = '\0';  // insert null-terminated string at end
-                                   // because C string format rules.
-    uartBufw[0] = '\0';  // insert null-terminated string at first for safety.
+    uart_cmd_recv();
+    uart_cmd_on("$led init\n", led_init, NULL);
+    uart_cmd_on("$led on\n", turn_on_led, NULL);
+    uart_cmd_on("$led off\n", turn_off_led, NULL);
+    uart_cmd_on("$cam init\n", camera_init, NULL);
+    uart_cmd_on("$cam deinit\n", camera_deinit, NULL);
+    uart_cmd_on("$wifi init\n", wifi_init_sta, NULL);
 
-    if (uartBufr[0] == '$') {
-      if (!strcmp(&uartBufr[1], "led on\n")) {
-        gpio_set_level(ESP32CAM_PIN_BUILT_IN_LED, LED_ON);
-      } else if (!strcmp(&uartBufr[1], "led off\n")) {
-        gpio_set_level(ESP32CAM_PIN_BUILT_IN_LED, LED_OFF);
-      } else {
-        sprintf(uartBufw, "%d\n", uartBufrLen);
-        uart_write_bytes(UART_NUM_0, uartBufw, strlen(uartBufw));
-      }
+    if (uart_cmd_is_data_match("$exit\n")) {
+      uart_cmd_send("Exiting program...\n");
+      break;
+    } else if (uart_cmd_is_data_match("$ip\n")) {
+      tcpip_adapter_ip_info_t ipInfo;
+      tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
+      char tmp[64];
+      sprintf(tmp, "Current IP: " IPSTR "\n", IP2STR(&ipInfo.ip));
+      uart_cmd_send(&tmp[0]);
     }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
   ESP_LOGI(PROG_TAG, "End of program!");
 }

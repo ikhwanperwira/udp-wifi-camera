@@ -2,12 +2,12 @@
  * This file is part of the wawan-ikhwan project.
  * Copyright (c) 2022 Muhammad Ikhwan Perwira <ikhwanperwira@gmail.com>
  *
- * cam_cfg.
+ * uwc_cam_cfg.
  *
  */
 
-#ifndef __CAM_CFG_H__
-#define __CAM_CFG_H__
+#ifndef __UWC_CAM_CFG_H__
+#define __UWC_CAM_CFG_H__
 #include "esp_camera.h"
 
 // CAMERA OV2640 PIN
@@ -31,7 +31,7 @@
 /**
  * @brief Location of camera config.
  */
-static const camera_config_t cam_cfg = {
+static const camera_config_t uwc_cam_cfg = {
     .pin_pwdn = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
     .pin_xclk = CAM_PIN_XCLK,

@@ -1,35 +1,67 @@
 #include "uwc_event.h"
 
 void app_main() {
-  ESP_LOGI(PROG_TAG, "Start of program!");
+  ESP_LOGI(UWC_TAG, "Start of program!");
 
-  if (uart_cmd_init(115200) == ESP_OK) {
-    uart_cmd_send("\nUART CMD has been initialized!\n");
+  esp_err_t err = uwc_uart_init(115200);
+  if (err == ESP_OK) {
+    uwc_uart_send("\nUART CMD has been initialized!\n");
   } else {
-    ESP_LOGE(PROG_TAG, "UART CMD init failure!");
+    ESP_LOGE(UWC_TAG, "UART CMD init failure!");
   }
 
-  uart_cmd_send("WiFi setup: (" WIFI_SSID "|" WIFI_PASW ")\n");
+  // NVS Initialization
+  uwc_nvs_init();
+  uwc_nvs_open();
+  uwc_nvs_read_ssid();
+  uwc_nvs_read_pasw();
+
+  // WIFi setup: (ssid|pasw)
+  uwc_uart_send("WiFi setup: (");
+  uwc_uart_send((char*)WIFI_SSID);
+  uwc_uart_send("|");
+  uwc_uart_send((char*)WIFI_PASW);
+  uwc_uart_send(")\n");
 
   for (;;) {
-    uart_cmd_recv();
-    uart_cmd_on("$nvs init\n", nvs_init, NULL);
-    uart_cmd_on("$wifi init\n", wifi_init_sta, NULL);
-    uart_cmd_on("$led init\n", led_init, NULL);
-    uart_cmd_on("$led on\n", led_set_on, NULL);
-    uart_cmd_on("$led off\n", led_set_off, NULL);
-    uart_cmd_on("$cam init\n", camera_init, NULL);
-    uart_cmd_on("$cam deinit\n", camera_deinit, NULL);
-    uart_cmd_on("$wifi init\n", wifi_init_sta, NULL);
-    uart_cmd_on("$wifi deinit\n", wifi_deinit_sta, NULL);
-    uart_cmd_on("$ip show\n", wifi_ip_sta_show, NULL);
+    uwc_uart_recv();  // Storing data received into buffer.
 
-    if (uart_cmd_is_data_match("$exit\n")) {
-      uart_cmd_send("Exiting program...\n");
+    // NVS handler.
+    uwc_uart_on("$nvs init\n", uwc_nvs_init, NULL);
+    uwc_uart_on("$nvs open\n", uwc_nvs_open, NULL);
+    uwc_uart_on("$nvs read ssid\n", uwc_nvs_read_ssid, NULL);
+    uwc_uart_on("$nvs write ssid\n", uwc_nvs_write_ssid, NULL);
+    uwc_uart_on("$nvs erase ssid\n", uwc_nvs_erase_ssid, NULL);
+    uwc_uart_on("$nvs read pasw\n", uwc_nvs_read_pasw, NULL);
+    uwc_uart_on("$nvs write pasw\n", uwc_nvs_write_pasw, NULL);
+    uwc_uart_on("$nvs erase pasw\n", uwc_nvs_erase_pasw, NULL);
+    uwc_uart_on("$nvs commit\n", uwc_nvs_commit, NULL);
+    uwc_uart_on("$nvs close\n", uwc_nvs_close, NULL);
+
+    // LED handler.
+    uwc_uart_on("$led init\n", uwc_led_init, NULL);
+    uwc_uart_on("$led on\n", uwc_led_set_on, NULL);
+    uwc_uart_on("$led off\n", uwc_led_set_off, NULL);
+
+    // Cam handler.
+    uwc_uart_on("$cam init\n", uwc_cam_init, NULL);
+    uwc_uart_on("$cam deinit\n", uwc_cam_deinit, NULL);
+
+    // Wifi handler.
+    uwc_uart_on("$wifi init\n", uwc_wifi_init_sta, NULL);
+    uwc_uart_on("$wifi deinit\n", uwc_wifi_deinit_sta, NULL);
+    uwc_uart_on("$wifi set\n", uwc_wifi_set, NULL);
+    uwc_uart_on("$wifi ip\n", uwc_wifi_ip, NULL);
+
+    if (uwc_uart_is_data_match("$exit\n")) {
+      uwc_uart_send("Exiting program...\n");
       break;
+    } else if (uwc_uart_is_data_match("$restart\n")) {
+      uwc_uart_send("Restarting program...\n");
+      esp_restart();
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }
-  ESP_LOGI(PROG_TAG, "End of program!");
+  ESP_LOGI(UWC_TAG, "End of program, system halt!");
   return;
 }

@@ -7,7 +7,8 @@
     "gpio.h": "c",
     "task.h": "c",
     "thread": "c",
-    "wifi_cfg.h": "c"
+    "wifi_cfg.h": "c",
+    "uwc_wifi_cfg.h": "c"
   },
   "files.eol": "\n"
 }

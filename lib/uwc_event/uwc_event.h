@@ -9,12 +9,15 @@
 #ifndef __UWC_EVENT_H__
 #define __UWC_EVENT_H__
 
-#include "cam_cfg.h"
-#include "log_tag.h"
-#include "uart_cmd.h"
-#include "wifi_cfg.h"
+#include "esp_err.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "uwc_cam_cfg.h"
+#include "uwc_eol_remover.h"
+#include "uwc_tag.h"
+#include "uwc_uart.h"
+#include "uwc_wifi_cfg.h"
 
-// ESP32CAM AI-Thinker default LED PIN
 #define ESP32CAM_PIN_BUILT_IN_LED GPIO_NUM_33
 #define LED_ON 0
 #define LED_OFF 1
@@ -22,46 +25,96 @@
 /**
  * @brief initializing built-in LED.
  */
-void led_init();
+void uwc_led_init();
 
 /**
  * @brief Set on LED.
  */
-void led_set_on();
+void uwc_led_set_on();
 
 /**
  * @brief Set off LED.
  */
-void led_set_off();
+void uwc_led_set_off();
 
 /**
  * @brief Initializing camera.
  */
-void camera_init();
+void uwc_cam_init();
 
 /**
  * @brief Deinitializing camera.
  */
-void camera_deinit();
+void uwc_cam_deinit();
 
 /**
  * @brief Initializing WiFI STA.
  */
-void wifi_init_sta();
+void uwc_wifi_init_sta();
 
 /**
  * @brief Deinitializing WiFI STA.
  */
-void wifi_deinit_sta();
+void uwc_wifi_deinit_sta();
+
+/**
+ * @brief Setting new SSID and new PASW into Non-Volatile Storage.
+ */
+void uwc_wifi_set();
 
 /**
  * @brief Show current IP after WiFI STA initialized.
  */
-void wifi_ip_sta_show();
+void uwc_wifi_ip();
 
 /**
  * @brief Initializing NVS.
  */
-void nvs_init();
+void uwc_nvs_init();
+
+/**
+ * @brief NVS open "uwc" storage.
+ */
+void uwc_nvs_open();
+
+/**
+ * @brief NVS read SSID in "uwc" storage.
+ */
+void uwc_nvs_read_ssid();
+
+/**
+ * @brief NVS write SSID  in "uwc" storage.
+ */
+void uwc_nvs_write_ssid();
+
+/**
+ * @brief NVS erase WIFI_SSID key in "uwc" storage.
+ */
+void uwc_nvs_erase_ssid();
+
+/**
+ * @brief NVS read PASW in "uwc" storage.
+ */
+void uwc_nvs_read_pasw();
+
+/**
+ * @brief NVS write SSID  in "uwc" storage.
+ */
+void uwc_nvs_write_pasw();
+
+/**
+ * @brief NVS erase WIFI_PASW key in "uwc" storage.
+ */
+void uwc_nvs_erase_pasw();
+
+/**
+ * @brief NVS commit wifi credential data in "uwc" storage.
+ */
+void uwc_nvs_commit();
+
+/**
+ * @brief NVS close "uwc" storage.
+ */
+void uwc_nvs_close();
 
 #endif

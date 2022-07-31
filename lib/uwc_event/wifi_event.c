@@ -1,38 +1,13 @@
 #include "uwc_event.h"
 
-static uint8_t is_wifi_initialized = 0;
-
-static uint8_t is_nvs_initialized = 0;
-
-void nvs_init() {
-  if (is_nvs_initialized) {
-    ESP_LOGW(PROG_TAG, "NVS already initialized!\n");
+static bool isWifiInit = 0;
+void uwc_wifi_init_sta() {
+  if (isWifiInit) {
+    ESP_LOGW(UWC_TAG, "WiFi already initialized!");
     return;
   }
 
-  // Initialize NVS
-  esp_err_t nvsErr = nvs_flash_init();
-  if (nvsErr == ESP_ERR_NVS_NO_FREE_PAGES ||
-      nvsErr == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    nvsErr = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(nvsErr);
-
-  if (nvsErr == ESP_OK) {
-    ESP_LOGI(PROG_TAG, "NVS has been initialized!\n");
-    is_nvs_initialized = 1;
-    return;
-  }
-
-  ESP_LOGE(PROG_TAG, "NVS init failure!\n");
-}
-
-void wifi_init_sta() {
-  if (is_wifi_initialized) {
-    ESP_LOGW(PROG_TAG, "WiFi already initialized!\n");
-    return;
-  }
+  uwc_nvs_init();
 
   s_wifi_event_group = xEventGroupCreate();
 
@@ -55,21 +30,18 @@ void wifi_init_sta() {
   wifi_config_t wifi_config = {
       .sta =
           {
-              .ssid = WIFI_SSID,
-              .password = WIFI_PASW,
-              /* Setting a password implies station will connect to all security
-               * modes including WEP/WPA. However these modes are deprecated and
-               * not advisable to be used. Incase your Access point doesn't
-               * support WPA2, these mode can be enabled by commenting below
-               * line */
               .threshold.authmode = WIFI_AUTH,
           },
   };
+
+  strncpy((char *)wifi_config.sta.ssid, (char *)&WIFI_SSID[0], 32);
+  strncpy((char *)wifi_config.sta.password, (char *)&WIFI_PASW[0], 64);
+
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
   ESP_ERROR_CHECK(esp_wifi_start());
 
-  ESP_LOGI(PROG_TAG, "wifi_init_sta finished.");
+  ESP_LOGI(UWC_TAG, "wifi_init_sta finished!");
 
   /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or
    * connection failed for the maximum number of re-tries (WIFI_FAIL_BIT). The
@@ -81,34 +53,34 @@ void wifi_init_sta() {
   /* xEventGroupWaitBits() returns the bits before the call returned, hence we
    * can test which event actually happened. */
   if (bits & WIFI_CONNECTED_BIT) {
-    ESP_LOGI(PROG_TAG, "Connected to ap SSID:%s password:%s", WIFI_SSID,
+    ESP_LOGI(UWC_TAG, "Connected to ap SSID:%s password:%s", WIFI_SSID,
              WIFI_PASW);
-    ESP_LOGI(PROG_TAG, "WiFi has been initialized!\n");
-    is_wifi_initialized = 1;
+    ESP_LOGI(UWC_TAG, "WiFi has been initialized!");
+    isWifiInit = 1;
   } else if (bits & WIFI_FAIL_BIT) {
-    ESP_LOGI(PROG_TAG, "Failed to connect to SSID:%s, password:%s", WIFI_SSID,
+    ESP_LOGI(UWC_TAG, "Failed to connect to SSID:%s, password:%s", WIFI_SSID,
              WIFI_PASW);
   } else {
-    ESP_LOGE(PROG_TAG, "UNEXPECTED EVENT");
+    ESP_LOGE(UWC_TAG, "UNEXPECTED EVENT");
   }
 }
 
-void wifi_deinit_sta() {
-  if (!is_wifi_initialized) {
-    ESP_LOGE(PROG_TAG, "WiFi already deinitialized!\n");
+void uwc_wifi_deinit_sta() {
+  if (!isWifiInit) {
+    ESP_LOGE(UWC_TAG, "WiFi already deinitialized!");
     return;
   }
 
   if (esp_wifi_deinit() == ESP_OK) {
-    ESP_LOGI(PROG_TAG, "WiFi has been deinitialized!\n");
-    is_wifi_initialized = 0;
+    ESP_LOGI(UWC_TAG, "WiFi has been deinitialized!");
+    isWifiInit = 0;
     return;
   }
 
-  ESP_LOGE(PROG_TAG, "WiFi init failure!\n");
+  ESP_LOGE(UWC_TAG, "WiFi init failure!");
 }
 
-void wifi_ip_sta_show() {
+void uwc_wifi_ip() {
   tcpip_adapter_ip_info_t ipInfo;
   tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
   char ip[32];
@@ -121,5 +93,34 @@ void wifi_ip_sta_show() {
   strcat(tmp, ip);
   strcat(tmp, gw);
   strcat(tmp, nm);
-  ESP_LOGI(PROG_TAG, "%s", tmp);
+  ESP_LOGI(UWC_TAG, "\n%s", tmp);
+}
+
+void uwc_wifi_set() {
+  uwc_uart_send("Enter SSID: ");
+  for (;;) {
+    if (uwc_uart_recv() > 0) {  // minimal SSID length is 1
+      strcpy((char *)WIFI_SSID, uwc_uart_get_data());
+      break;
+    }
+  }
+  uwc_eol_remover((char *)WIFI_SSID);
+  uwc_uart_send((char *)WIFI_SSID);
+  uwc_uart_send("\n");
+
+  uwc_uart_send("Enter PASW: ");
+  for (;;) {
+    if (uwc_uart_recv() > 0) {  // minimal password length is 8 actually
+      strcpy((char *)WIFI_PASW, uwc_uart_get_data());
+      break;
+    }
+  }
+  uwc_eol_remover((char *)WIFI_PASW);
+  uwc_uart_send((char *)WIFI_PASW);
+  uwc_uart_send("\n");
+
+  if (strlen((char *)WIFI_PASW) < 8) {
+    ESP_LOGW(UWC_TAG, "Warning! Password length is less than 8 characters!");
+  }
+  uwc_uart_send("WiFi setup has been updated!\n");
 }

@@ -1,11 +1,11 @@
-#include "uart_cmd.h"
+#include "uwc_uart.h"
 
 static char uartCmdBufr[UART_BUF_SIZE];
 static char uartCmdBufw[UART_BUF_SIZE];
 
-static uint8_t isHandled = 0;
+static bool isHandled = false;
 
-esp_err_t uart_cmd_init(uint32_t baudrate) {
+esp_err_t uwc_uart_init(unsigned int baudrate) {
   uart_config_t uart_config = {
       .baud_rate = baudrate,
       .data_bits = UART_DATA_8_BITS,
@@ -24,12 +24,12 @@ esp_err_t uart_cmd_init(uint32_t baudrate) {
   return err;
 }
 
-void uart_cmd_send(char* data) {
+void uwc_uart_send(char* data) {
   strcpy(uartCmdBufw, data);
   uart_write_bytes(UART_NUM_0, uartCmdBufw, strlen(uartCmdBufw));
 }
 
-unsigned int uart_cmd_recv() {
+unsigned int uwc_uart_recv() {
   unsigned int uartCmdBufrLen = (unsigned int)uart_read_bytes(
       UART_NUM_0, uartCmdBufr, UART_BUF_SIZE, 20 / portTICK_PERIOD_MS);
   uartCmdBufr[uartCmdBufrLen] = '\0';  // insert null-terminated string at end
@@ -38,13 +38,13 @@ unsigned int uart_cmd_recv() {
   return uartCmdBufrLen;
 }
 
-char* uart_cmd_get_data() { return uartCmdBufr; }
+char* uwc_uart_get_data() { return &uartCmdBufr[0]; }
 
-int uart_cmd_is_data_match(char* check) {
-  return !strcmp(check, &uartCmdBufr[0]);
+bool uwc_uart_is_data_match(char* check) {
+  return (bool)!strcmp(check, &uartCmdBufr[0]);
 }
 
-void uart_cmd_on(char* data, void on_match(), void on_unmatch()) {
+void uwc_uart_on(char* data, void on_match(), void on_unmatch()) {
   if (isHandled) {  // return if another event already handled this data.
     return;
   }

@@ -12,6 +12,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_err.h"
+#include "string.h"
 
 // ESP32CAM AI-Thinker default UART PIN, you maybe need configure this.
 #define UART_PIN_TXD GPIO_NUM_1
@@ -47,7 +48,7 @@ unsigned int uart_cmd_recv();
 
 /**
  * @brief Get data received that stored in read buffer after uart_cmd_recv()
- * received. library.
+ * is called.
  * @return
  *  Pointer to the data.
  */
@@ -63,7 +64,7 @@ char* uart_cmd_get_data();
 int uart_cmd_is_data_match(char* check);
 
 /**
- * @brief Handling data with callback.
+ * @brief Handling data with callback after uart_cmd_recv() is called.
  * @param data: Data to compare.
  * @param on_match: Callback do something if data received is match, set to
  * NULL if not needed.

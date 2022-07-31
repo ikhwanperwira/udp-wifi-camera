@@ -5,7 +5,9 @@
     "esp_camera.h": "c",
     "string.h": "c",
     "gpio.h": "c",
-    "task.h": "c"
+    "task.h": "c",
+    "thread": "c",
+    "wifi_cfg.h": "c"
   },
   "files.eol": "\n"
 }

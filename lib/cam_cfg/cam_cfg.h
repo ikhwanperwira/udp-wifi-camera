@@ -2,7 +2,7 @@
  * This file is part of the wawan-ikhwan project.
  * Copyright (c) 2022 Muhammad Ikhwan Perwira <ikhwanperwira@gmail.com>
  *
- * uart_cmd.
+ * cam_cfg.
  *
  */
 

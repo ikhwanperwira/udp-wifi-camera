@@ -1,12 +1,9 @@
 #include "uart_cmd.h"
 
-#include "driver/gpio.h"
-#include "driver/uart.h"
-#include "esp_err.h"
-#include "string.h"
-
 static char uartCmdBufr[UART_BUF_SIZE];
 static char uartCmdBufw[UART_BUF_SIZE];
+
+static uint8_t isHandled = 0;
 
 esp_err_t uart_cmd_init(uint32_t baudrate) {
   uart_config_t uart_config = {
@@ -37,6 +34,7 @@ unsigned int uart_cmd_recv() {
       UART_NUM_0, uartCmdBufr, UART_BUF_SIZE, 20 / portTICK_PERIOD_MS);
   uartCmdBufr[uartCmdBufrLen] = '\0';  // insert null-terminated string at end
                                        // because C string format rules.
+  isHandled = 0;
   return uartCmdBufrLen;
 }
 
@@ -47,14 +45,19 @@ int uart_cmd_is_data_match(char* check) {
 }
 
 void uart_cmd_on(char* data, void on_match(), void on_unmatch()) {
+  if (isHandled) {  // return if another event already handled this data.
+    return;
+  }
   if (!strcmp(data, uartCmdBufr)) {
     if (on_match) {
       on_match();
+      isHandled = 1;
     }
     return;
   } else {
     if (on_unmatch) {
       on_unmatch();
+      isHandled = 1;
     }
     return;
   }

@@ -2,13 +2,18 @@
  * This file is part of the wawan-ikhwan project.
  * Copyright (c) 2022 Muhammad Ikhwan Perwira <ikhwanperwira@gmail.com>
  *
- * uwc_cam_cfg.
+ * uwc_cam.
  *
  */
 
-#ifndef __UWC_CAM_CFG_H__
-#define __UWC_CAM_CFG_H__
+#ifndef __UWC_CAM_H__
+#define __UWC_CAM_H__
+
+// Dependencies
 #include "esp_camera.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "uwc_tag.h"
 
 // CAMERA OV2640 PIN
 #define CAM_PIN_PWDN GPIO_NUM_32
@@ -29,7 +34,7 @@
 #define CAM_PIN_PCLK GPIO_NUM_22
 
 /**
- * @brief Location of camera config.
+ * @brief Default camera config OV2640.
  */
 static const camera_config_t uwc_cam_cfg = {
     .pin_pwdn = CAM_PIN_PWDN,
@@ -64,5 +69,20 @@ static const camera_config_t uwc_cam_cfg = {
     .grab_mode = CAMERA_GRAB_WHEN_EMPTY  // CAMERA_GRAB_LATEST. Sets when
                                          // buffers should be filled
 };
+
+// Camera initialization status.
+extern bool uwcIsCamInit;
+
+/**
+ * @brief Initializing camera.
+ * @return ESP_OK: on success.
+ */
+esp_err_t uwc_cam_init(void);
+
+/**
+ * @brief Deinitializing camera.
+ * @return ESP_OK: on success.
+ */
+esp_err_t uwc_cam_deinit(void);
 
 #endif

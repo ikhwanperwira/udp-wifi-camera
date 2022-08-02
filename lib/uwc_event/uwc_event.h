@@ -2,7 +2,7 @@
  * This file is part of the wawan-ikhwan project.
  * Copyright (c) 2022 Muhammad Ikhwan Perwira <ikhwanperwira@gmail.com>
  *
- * udp wifi camera event.
+ * udp-wifi-camera event.
  *
  */
 
@@ -10,111 +10,113 @@
 #define __UWC_EVENT_H__
 
 #include "esp_err.h"
-#include "nvs.h"
-#include "nvs_flash.h"
-#include "uwc_cam_cfg.h"
-#include "uwc_eol_remover.h"
+#include "uwc_cam.h"
+#include "uwc_eolremover.h"
+#include "uwc_led.h"
+#include "uwc_nvs.h"
 #include "uwc_tag.h"
 #include "uwc_uart.h"
-#include "uwc_wifi_cfg.h"
+#include "uwc_wifi.h"
 
-#define ESP32CAM_PIN_BUILT_IN_LED GPIO_NUM_33
-#define LED_ON 0
-#define LED_OFF 1
+// Type for uwcEvent_t
+typedef void uwcEvent_t;
+
+// Error variable that will be usage by any event.
+esp_err_t uwcEventErr;
 
 /**
  * @brief initializing built-in LED.
  */
-void uwc_led_init();
+uwcEvent_t uwc_event_led_init(void);
 
 /**
  * @brief Set on LED.
  */
-void uwc_led_set_on();
+uwcEvent_t uwc_event_led_set_on(void);
 
 /**
  * @brief Set off LED.
  */
-void uwc_led_set_off();
+uwcEvent_t uwc_event_led_set_off(void);
 
 /**
- * @brief Initializing camera.
+ * @brief Init camera.
  */
-void uwc_cam_init();
+uwcEvent_t uwc_event_cam_init(void);
 
 /**
- * @brief Deinitializing camera.
+ * @brief Deinit camera.
  */
-void uwc_cam_deinit();
+uwcEvent_t uwc_event_cam_deinit(void);
 
 /**
- * @brief Initializing WiFI STA.
+ * @brief Init NVS.
  */
-void uwc_wifi_init_sta();
+uwcEvent_t uwc_event_nvs_init(void);
 
 /**
- * @brief Deinitializing WiFI STA.
+ * @brief Open NVS with using namespace "uwc".
  */
-void uwc_wifi_deinit_sta();
+uwcEvent_t uwc_event_nvs_open(void);
 
 /**
- * @brief Setting new SSID and new PASW into Non-Volatile Storage.
+ * @brief Read SSID from NVS.
  */
-void uwc_wifi_set();
+uwcEvent_t uwc_event_nvs_read_ssid(void);
 
 /**
- * @brief Show current IP after WiFI STA initialized.
+ * @brief Write SSID from NVS.
  */
-void uwc_wifi_ip();
+uwcEvent_t uwc_event_nvs_write_ssid(void);
 
 /**
- * @brief Initializing NVS.
+ * @brief Erase SSID from NVS.
  */
-void uwc_nvs_init();
+uwcEvent_t uwc_event_nvs_erase_ssid(void);
 
 /**
- * @brief NVS open "uwc" storage.
+ * @brief Read PASW from NVS.
  */
-void uwc_nvs_open();
+uwcEvent_t uwc_event_nvs_read_pasw(void);
 
 /**
- * @brief NVS read SSID in "uwc" storage.
+ * @brief Write PASW from NVS.
  */
-void uwc_nvs_read_ssid();
+uwcEvent_t uwc_event_nvs_write_pasw(void);
 
 /**
- * @brief NVS write SSID  in "uwc" storage.
+ * @brief Erase PASW from NVS.
  */
-void uwc_nvs_write_ssid();
+uwcEvent_t uwc_event_nvs_erase_pasw(void);
 
 /**
- * @brief NVS erase WIFI_SSID key in "uwc" storage.
+ * @brief Commit changes WiFI auth into NVS.
  */
-void uwc_nvs_erase_ssid();
+uwcEvent_t uwc_event_nvs_commit_auth(void);
 
 /**
- * @brief NVS read PASW in "uwc" storage.
+ * @brief Close NVS with namespace "uwc".
  */
-void uwc_nvs_read_pasw();
+uwcEvent_t uwc_event_nvs_close(void);
 
 /**
- * @brief NVS write SSID  in "uwc" storage.
+ * @brief Init WiFI.
  */
-void uwc_nvs_write_pasw();
+uwcEvent_t uwc_event_wifi_init(void);
 
 /**
- * @brief NVS erase WIFI_PASW key in "uwc" storage.
+ * @brief Setup new SSID and new PASW.
  */
-void uwc_nvs_erase_pasw();
+uwcEvent_t uwc_event_wifi_setup(void);
 
 /**
- * @brief NVS commit wifi credential data in "uwc" storage.
+ * @brief Show WiFi connected info.
  */
-void uwc_nvs_commit();
+uwcEvent_t uwc_event_wifi_info(void);
 
 /**
- * @brief NVS close "uwc" storage.
+ * @brief Deinit WiFI.
  */
-void uwc_nvs_close();
+uwcEvent_t uwc_event_wifi_deinit(void);
 
 #endif

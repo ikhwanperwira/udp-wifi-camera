@@ -44,7 +44,7 @@ void uwc_uart_send(char* data);
  * @return
  *  Total bytes received.
  */
-unsigned int uwc_uart_recv();
+unsigned int uwc_uart_recv(void);
 
 /**
  * @brief Get data received that stored in read buffer after uwc_uart_recv()
@@ -52,7 +52,7 @@ unsigned int uwc_uart_recv();
  * @return
  *  Pointer to the data.
  */
-char* uwc_uart_get_data();
+char* uwc_uart_get_data(void);
 
 /**
  * @brief Get data received that stored in read buffer after uwc_uart_recv() is

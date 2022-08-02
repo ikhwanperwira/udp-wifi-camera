@@ -14,6 +14,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
              event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    uwcIsWifiInit = false;
     if (s_retry_num < MAX_TRY) {
       esp_wifi_connect();
       s_retry_num++;

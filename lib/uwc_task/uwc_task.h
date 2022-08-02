@@ -19,11 +19,16 @@ typedef void uwcTask_t;
 /**
  * @brief Task when OS is starting up.
  */
-uwcTask_t uwc_startup_task();
+uwcTask_t uwc_task_startup();
 
 /**
  * @brief Task for handle every command through UART.
  */
-uwcTask_t uwc_uart_task(void *pvParameters);
+uwcTask_t uwc_task_uart(void *pvParameters);
+
+/**
+ * @brief Task for handle every command through UDP.
+ */
+uwcTask_t uwc_task_udp(void *pvParameters);
 
 #endif

@@ -13,6 +13,7 @@
 #include "driver/uart.h"
 #include "esp_err.h"
 #include "string.h"
+#include "uwc_eolremover.h"
 
 // ESP32CAM AI-Thinker default UART PIN, you maybe need configure this.
 #define UART_PIN_TXD GPIO_NUM_1
@@ -73,5 +74,14 @@ bool uwc_uart_is_data_match(char* check);
  *  nothing.
  */
 void uwc_uart_on(char* data, void on_match(), void on_unmatch());
+
+/**
+ * @brief Handling incoming data interactively with blocking.
+ * @param msg: Message to show.
+ * @param val_out: Store input to val_out.
+ * @return
+ *  nothing.
+ */
+void uwc_uart_input(char* msg, char* val_out);
 
 #endif

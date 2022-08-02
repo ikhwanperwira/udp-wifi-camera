@@ -32,21 +32,21 @@
 extern char SERV_IP[16];
 extern u16_t SERV_PORT;
 
-/**
- * @brief Set target UDP server IP.
- * @param ip: IP of UDP server.
- * @return
- *  nothing.
- */
-void uwc_udp_set_ip(char* ip);
+// /**
+//  * @brief Set target UDP server IP.
+//  * @param ip: IP of UDP server.
+//  * @return
+//  *  nothing.
+//  */
+// void uwc_udp_set_ip(char* ip);
 
-/**
- * @brief Set target UDP server port.
- * @param port: Port of UDP server.
- * @return
- *  nothing.
- */
-void uwc_udp_set_port(u16_t port);
+// /**
+//  * @brief Set target UDP server port.
+//  * @param port: Port of UDP server.
+//  * @return
+//  *  nothing.
+//  */
+// void uwc_udp_set_port(u16_t port);
 
 /**
  * @brief Set target UDP server port.
@@ -58,14 +58,12 @@ void uwc_udp_set_port(u16_t port);
 void uwc_udp_set_timeout(u8_t sec, u8_t usec);
 
 /**
- * @brief Initializing uwc_udp.
- * @param ip: UDP Server IP.
- * @param port: UDP Port IP.
+ * @brief Initializing uwc_udp. Make sure setup SERV_IP and SERV_PORT first.
  * @return
  *     ESP_OK:       Success.
  *     !ESP_OK:      Fail.
  */
-esp_err_t uwc_udp_init(void);
+esp_err_t uwc_udp_init();
 
 /**
  * @brief Send data.
@@ -82,7 +80,7 @@ esp_err_t uwc_udp_send(char* data);
  * @return
  *  Total bytes received.
  */
-unsigned int uwc_udp_recv(void);
+int uwc_udp_recv(void);
 
 /**
  * @brief Get data received that stored in read buffer after uwc_udp_recv()
@@ -119,5 +117,8 @@ void uwc_udp_on(char* data, void on_match(), void on_unmatch());
  *  nothing.
  */
 void uwc_udp_flush(void);
+
+// debug
+void uwc_udp_debug(void);
 
 #endif

@@ -16,6 +16,7 @@
 #include "uwc_nvs.h"
 #include "uwc_tag.h"
 #include "uwc_uart.h"
+#include "uwc_udp.h"
 #include "uwc_wifi.h"
 
 // Type for uwcEvent_t
@@ -118,5 +119,10 @@ uwcEvent_t uwc_event_wifi_info(void);
  * @brief Deinit WiFI.
  */
 uwcEvent_t uwc_event_wifi_deinit(void);
+
+/**
+ * @brief Init UDP.
+ */
+uwcEvent_t uwc_event_udp_init(void);
 
 #endif

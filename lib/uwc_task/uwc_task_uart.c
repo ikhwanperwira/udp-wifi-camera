@@ -1,8 +1,8 @@
 #include "uwc_task.h"
 
-uwcTask_t uwc_uart_task(void *pvParameters) {
+uwcTask_t uwc_task_uart(void *pvParameters) {
   esp_err_t err = uwc_uart_init(115200);
-  if (err == ESP_OK) {
+  if (!err) {
     uwc_uart_send("\nUART CMD has been initialized!\n");
   } else {
     ESP_LOGE(uwc_tag_task, "UART CMD init failure!");
@@ -38,20 +38,17 @@ uwcTask_t uwc_uart_task(void *pvParameters) {
     uwc_uart_on("$wifi info\n", uwc_event_wifi_info, NULL);
 
     // UDP handler.
-    // uwc_uart_on("$udp init\n", (void *)uwc_udp_init, NULL);
-    // uwc_uart_on("$udp send\n", (void *)uwc_udp_send, NULL);
-    // uwc_uart_on("$udp recv\n", (void *)uwc_udp_recv, NULL);
-    // uwc_uart_on("$udp flush\n", (void *)uwc_udp_flush, NULL);
+    uwc_uart_on("$udp init\n", uwc_event_udp_init, NULL);
+    uwc_uart_on("$udp debug\n", uwc_udp_debug, NULL);
 
     if (uwc_uart_is_data_match("$exit\n")) {
-      uwc_uart_send("Exiting program...\n");
       break;
     } else if (uwc_uart_is_data_match("$restart\n")) {
       uwc_uart_send("Restarting program...\n");
       esp_restart();
     }
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
-  ESP_LOGW(uwc_tag_task, "System halt!");
+  ESP_LOGW(uwc_tag_task, "Exited!");
   vTaskDelete(NULL);
 }

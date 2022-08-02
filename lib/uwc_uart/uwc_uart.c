@@ -47,6 +47,7 @@ void uwc_uart_on(char* data, void on_match(void), void on_unmatch(void)) {
   if (isHandled) {  // return if another event already handled this data.
     return;
   }
+
   if (!strcmp(data, uwcUartBufRX)) {
     if (on_match) {
       on_match();
@@ -60,4 +61,17 @@ void uwc_uart_on(char* data, void on_match(void), void on_unmatch(void)) {
     }
     return;
   }
+}
+
+void uwc_uart_input(char* msg, char* val_out) {
+  uwc_uart_send(msg);
+  for (;;) {
+    if (uwc_uart_recv() > 0) {  // check if data incoming!
+      strcpy(val_out, uwc_uart_get_data());
+      break;
+    }
+  }
+  uwc_eol_remover(val_out);
+  uwc_uart_send(val_out);
+  uwc_uart_send("\n");
 }

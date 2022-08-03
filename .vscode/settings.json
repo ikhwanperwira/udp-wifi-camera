@@ -21,7 +21,8 @@
     "uwc_led.h": "c",
     "uwc_tag.h": "c",
     "uwc_nvs_task": "c",
-    "uwc_startup_task": "c"
+    "uwc_startup_task": "c",
+    "projdefs.h": "c"
   },
   "files.eol": "\n"
 }

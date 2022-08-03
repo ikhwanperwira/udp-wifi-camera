@@ -63,7 +63,7 @@ void uwc_uart_on(char* data, void on_match(void), void on_unmatch(void)) {
   }
 }
 
-void uwc_uart_input(char* msg, char* val_out) {
+void uwc_uart_input(char* msg, char* val_out, bool show_echo, bool remove_eol) {
   uwc_uart_send(msg);
   for (;;) {
     if (uwc_uart_recv() > 0) {  // check if data incoming!
@@ -71,7 +71,17 @@ void uwc_uart_input(char* msg, char* val_out) {
       break;
     }
   }
-  uwc_eol_remover(val_out);
-  uwc_uart_send(val_out);
-  uwc_uart_send("\n");
+  if (remove_eol) {
+    uwc_eol_remover(val_out);
+  }
+  if (show_echo) {
+    uwc_uart_send(val_out);
+    uwc_uart_send("\n");
+  }
+}
+
+void uwc_uart_flush(void) {
+  memset(uwcUartBufTX, 0, UART_BUF_SIZE);
+  memset(uwcUartBufRX, 0, UART_BUF_SIZE);
+  ESP_LOGI(uwc_tag_uart, "UART buffer has been flushed!");
 }

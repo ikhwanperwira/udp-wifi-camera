@@ -1,12 +1,15 @@
 #include "uwc_udp.h"
 
-char SERV_IP[16] = "192.168.43.1";
+char SERV_IPV4[16] = "192.168.43.1";
 u16_t SERV_PORT = 8888;
+bool interruptHandshake = false;
+u8_t timeoutCounter = 1;
+bool isUdpInit = false;
 
 static char uwcUdpBufRX[UDP_BUF_SIZE];
 static char uwcUdpBufTX[UDP_BUF_SIZE];
 
-static int sock = 0;
+static int uwcSock = 0;
 static bool isHandled = false;
 
 struct sockaddr_in destAddr;
@@ -14,10 +17,24 @@ struct sockaddr_storage sourceAddr;
 struct timeval timeout;
 static socklen_t socklen = sizeof(sourceAddr);
 
+void uwc_udp_handshake() {
+  interruptHandshake = false;
+  ESP_LOGW(uwc_tag_udp, "Sending SYN to %s:%d", SERV_IPV4, SERV_PORT);
+  do {  // Handshaking...
+    timeoutCounter = 1;
+    uwc_udp_send("SYN\n");
+    uwc_udp_recv();
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    if (interruptHandshake) {
+      break;
+    }
+  } while (!uwc_udp_is_data_match("ACK\n"));
+}
+
 void uwc_udp_set_timeout(u8_t sec, u8_t usec) {
   timeout.tv_sec = sec;
   timeout.tv_usec = usec;
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+  setsockopt(uwcSock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
 }
 
 esp_err_t uwc_udp_init() {
@@ -25,25 +42,24 @@ esp_err_t uwc_udp_init() {
     return ESP_FAIL;
   }
 
-  destAddr.sin_addr.s_addr = inet_addr(SERV_IP);
+  close(uwcSock);
+
+  isUdpInit = false;
+
+  destAddr.sin_addr.s_addr = inet_addr(SERV_IPV4);
   destAddr.sin_family = AF_INET;
   destAddr.sin_port = htons(SERV_PORT);
 
-  sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-  if (sock < 0) {
+  uwcSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  if (uwcSock < 0) {
     ESP_LOGE(uwc_tag_udp, "Unable to create socket: errno %d", errno);
     return ESP_FAIL;
   }
   uwc_udp_set_timeout(1, 0);
   uwc_udp_flush();
+  uwc_udp_handshake();
 
-  ESP_LOGI(uwc_tag_udp, "Socket created, sending SYN to %s:%d", SERV_IP,
-           SERV_PORT);
-  do {  // Handshaking...
-    uwc_udp_send("SYN\n");
-    uwc_udp_recv();
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-  } while (!uwc_udp_is_data_match("ACK\n"));
+  isUdpInit = true;
 
   ESP_LOGI(uwc_tag_udp, "ACK received!");
   ESP_LOGI(uwc_tag_udp, "UDP has been initialized!");
@@ -56,7 +72,7 @@ esp_err_t uwc_udp_send(char* data) {
   }
 
   strcpy(uwcUdpBufTX, data);
-  int err = sendto(sock, uwcUdpBufTX, strlen(uwcUdpBufTX), 0,
+  int err = sendto(uwcSock, uwcUdpBufTX, strlen(uwcUdpBufTX), 0,
                    (struct sockaddr*)&destAddr, sizeof(destAddr));
   if (err < 0) {
     ESP_LOGE(uwc_tag_udp, "Error occurred during sending: errno %d", errno);
@@ -70,25 +86,23 @@ int uwc_udp_recv(void) {
     return 0;
   }
 
-  int uwcUdpBufRXLen = recvfrom(sock, uwcUdpBufRX, sizeof(uwcUdpBufRX) - 1, 0,
-                                (struct sockaddr*)&sourceAddr, &socklen);
+  int uwcUdpBufRXLen = recvfrom(uwcSock, uwcUdpBufRX, sizeof(uwcUdpBufRX) - 1,
+                                0, (struct sockaddr*)&sourceAddr, &socklen);
 
   if (uwcUdpBufRXLen < 0) {
-    // if (errno != 11) {  // print error only if error is not timeout error.
-    //   ESP_LOGE(uwc_tag_udp, "recvfrom failed: errno %d", errno);
-    // }
+    // ESP_LOGE(uwc_tag_udp, "recvfrom failed: errno %d", errno);
+    timeoutCounter++;
+    ESP_LOGW(uwc_tag_udp, "Timeout Counter: %i", timeoutCounter);
     return 0;
   }
+  timeoutCounter = 1;
   uwcUdpBufRX[uwcUdpBufRXLen] = 0;  // insert null-terminated string at end
   // because C string format rules.
-  isHandled = false;
+  isHandled = false;  // for event handling.
   return uwcUdpBufRXLen;
 }
 
-char* uwc_udp_get_data(void) {
-  isHandled = true;
-  return &uwcUdpBufRX[0];
-}
+char* uwc_udp_get_data(void) { return &uwcUdpBufRX[0]; }
 
 bool uwc_udp_is_data_match(char* check) {
   return (bool)!strcmp(check, uwcUdpBufRX);
@@ -120,8 +134,33 @@ void uwc_udp_flush(void) {
 }
 
 void uwc_udp_debug(void) {
-  ESP_LOGI(uwc_tag_udp, "TX : %s (%i) %c", uwcUdpBufTX, strlen(uwcUdpBufTX),
-           uwcUdpBufTX[5]);
-  ESP_LOGI(uwc_tag_udp, "RX : %s (%i) %c", uwcUdpBufRX, strlen(uwcUdpBufRX),
-           uwcUdpBufRX[5]);
+  ESP_LOGI(uwc_tag_udp, "TX : |%s| (%i) TX[4]=%c", uwcUdpBufTX,
+           strlen(uwcUdpBufTX), uwcUdpBufTX[4]);
+  ESP_LOGI(uwc_tag_udp, "RX : |%s| (%i) RX[4]=%c", uwcUdpBufRX,
+           strlen(uwcUdpBufRX), uwcUdpBufRX[4]);
+}
+
+void uwc_udp_input(char* msg, char* val_out, bool show_echo, bool remove_eol) {
+  timeoutCounter = 1;
+  if (uwc_udp_send(msg)) {
+    ESP_LOGE(uwc_tag_udp, "Unable to send echo!");
+    return;
+  }
+  for (;;) {
+    if (timeoutCounter == 30) {
+      uwc_udp_send("\ninput timeout!\n");
+      return;
+    }
+    if (uwc_udp_recv() > 0) {  // check if data incoming!
+      strcpy(val_out, uwc_udp_get_data());
+      break;
+    }
+  }
+  if (remove_eol) {
+    uwc_eol_remover(val_out);
+  }
+  if (show_echo) {
+    uwc_udp_send(val_out);
+    uwc_udp_send("\n");
+  }
 }

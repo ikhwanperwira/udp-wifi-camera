@@ -18,11 +18,13 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     if (s_retry_num < MAX_TRY) {
       esp_wifi_connect();
       s_retry_num++;
-      ESP_LOGI(uwc_tag_wifi, "retry to connect to the AP");
+      if (!(s_retry_num % 4)) {
+        ESP_LOGI(uwc_tag_wifi, "Connect AP '%s'|'%s' attempt: %i", WIFI_SSID,
+                 WIFI_PASW, MAX_TRY - s_retry_num);
+      }
     } else {
       xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
     }
-    ESP_LOGI(uwc_tag_wifi, "connect to the AP fail");
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(uwc_tag_wifi, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));

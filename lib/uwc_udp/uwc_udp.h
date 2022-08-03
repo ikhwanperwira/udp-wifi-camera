@@ -24,13 +24,17 @@
 #include "lwip/sys.h"
 #include "stdbool.h"
 #include "string.h"
+#include "uwc_eolremover.h"
 #include "uwc_tag.h"
 #include "uwc_wifi.h"
 
 #define UDP_BUF_SIZE 512
 
-extern char SERV_IP[16];
+extern char SERV_IPV4[16];
 extern u16_t SERV_PORT;
+extern bool interruptHandshake;  // signal interrupt when handshaking.
+extern bool isUdpInit;
+extern u8_t timeoutCounter;  // timeout counted when length == 0;
 
 // /**
 //  * @brief Set target UDP server IP.
@@ -58,7 +62,7 @@ extern u16_t SERV_PORT;
 void uwc_udp_set_timeout(u8_t sec, u8_t usec);
 
 /**
- * @brief Initializing uwc_udp. Make sure setup SERV_IP and SERV_PORT first.
+ * @brief Initializing uwc_udp. Make sure setup SERV_IPV4 and SERV_PORT first.
  * @return
  *     ESP_OK:       Success.
  *     !ESP_OK:      Fail.
@@ -120,5 +124,16 @@ void uwc_udp_flush(void);
 
 // debug
 void uwc_udp_debug(void);
+
+/**
+ * @brief Handling incoming data interactively with blocking.
+ * @param msg: Message to show.
+ * @param val_out: Store input to val_out.
+ * @param show_echo: send back input.
+ * @param remove_eol: remove any CR and any LF at End of Line.
+ * @return
+ *  nothing.
+ */
+void uwc_udp_input(char* msg, char* val_out, bool show_echo, bool remove_eol);
 
 #endif

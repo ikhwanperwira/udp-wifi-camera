@@ -15,6 +15,7 @@
 #include "uwc_led.h"
 #include "uwc_nvs.h"
 #include "uwc_tag.h"
+#include "uwc_task.h"
 #include "uwc_uart.h"
 #include "uwc_udp.h"
 #include "uwc_wifi.h"
@@ -91,7 +92,7 @@ uwcEvent_t uwc_event_nvs_write_pasw(void);
 uwcEvent_t uwc_event_nvs_erase_pasw(void);
 
 /**
- * @brief Commit changes WiFI auth into NVS.
+ * @brief Commit changes WiFi auth into NVS.
  */
 uwcEvent_t uwc_event_nvs_commit_auth(void);
 
@@ -106,9 +107,14 @@ uwcEvent_t uwc_event_nvs_close(void);
 uwcEvent_t uwc_event_wifi_init(void);
 
 /**
- * @brief Setup new SSID and new PASW.
+ * @brief Setup new SSID and new PASW with UART input.
  */
-uwcEvent_t uwc_event_wifi_setup(void);
+uwcEvent_t uwc_event_wifi_setup_with_uart(void);
+
+/**
+ * @brief Setup new SSID and new PASW with UDP input.
+ */
+uwcEvent_t uwc_event_wifi_setup_with_udp(void);
 
 /**
  * @brief Show WiFi connected info.
@@ -121,8 +127,53 @@ uwcEvent_t uwc_event_wifi_info(void);
 uwcEvent_t uwc_event_wifi_deinit(void);
 
 /**
- * @brief Init UDP.
+ * @brief Init UDP (using gateway destination).
  */
 uwcEvent_t uwc_event_udp_init(void);
+
+/**
+ * @brief Reinit UDP (applying new destination).
+ */
+uwcEvent_t uwc_event_udp_reinit(void);
+
+/**
+ * @brief Send UDP from UART
+ */
+uwcEvent_t uwc_event_udp_send(void);
+
+/**
+ * @brief Receive UDP echo to UART
+ */
+uwcEvent_t uwc_event_udp_recv(void);
+
+/**
+ * @brief Setup UDP destinastion with UART input.
+ */
+uwcEvent_t uwc_event_udp_setup_with_uart(void);
+
+/**
+ * @brief Setup UDP destinastion with UDP input.
+ */
+uwcEvent_t uwc_event_udp_setup_with_udp(void);
+
+/**
+ * @brief Interrupt UDP handshaking while initializing.
+ */
+uwcEvent_t uwc_event_udp_interrupt_handshake(void);
+
+/**
+ * @brief Kill UDP task.
+ */
+uwcEvent_t uwc_event_udp_kill(void);
+
+/**
+ * @brief Kill UDP task in its task itself.
+ */
+uwcEvent_t uwc_event_udp_killself(void);
+
+// /**
+//  * @brief Force UDP handshake.
+//  */
+// uwcEvent_t uwc_event_udp_restart(void);
 
 #endif

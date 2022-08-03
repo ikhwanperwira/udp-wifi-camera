@@ -1,9 +1,21 @@
 #include "uwc_task.h"
 
-uwcTask_t uwc_task_udp(void *pvParameters) {
-  uwc_event_udp_init();
+uwcTaskHandle_t uwc_task_handle_udp = NULL;
+
+uwcTask_t uwc_task_udp(void *udpFlag) {
+  ESP_ERROR_CHECK(uwc_udp_init());
+
   for (;;) {
+    if (!uwcIsWifiInit) {
+      continue;
+    }
+
     uwc_udp_recv();
+
+    if (!(timeoutCounter % 10)) {
+      ESP_LOGW(uwc_tag_task, "No ACK from server, reinit UDP...");
+      ESP_ERROR_CHECK(uwc_udp_init());
+    }
 
     // NVS handler.
     uwc_udp_on("$nvs init\n", uwc_event_nvs_init, NULL);
@@ -27,18 +39,21 @@ uwcTask_t uwc_task_udp(void *pvParameters) {
     uwc_udp_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
 
     // WiFi handler.
-    uwc_udp_on("$wifi init\n", uwc_event_wifi_init, NULL);
-    uwc_udp_on("$wifi deinit\n", uwc_event_wifi_deinit, NULL);
-    uwc_udp_on("$wifi setup\n", uwc_event_wifi_setup, NULL);
+    uwc_udp_on("$wifi setup\n", uwc_event_wifi_setup_with_udp, NULL);
     uwc_udp_on("$wifi info\n", uwc_event_wifi_info, NULL);
+
+    // UDP handler.
+    uwc_udp_on("$udp setup\n", uwc_event_udp_setup_with_udp, NULL);
 
     if (uwc_udp_is_data_match("$exit\n")) {
       break;
     } else if (uwc_udp_is_data_match("$restart\n")) {
       uwc_udp_send("Restarting program...\n");
       esp_restart();
+    } else if (uwc_udp_is_data_match("$udp reinit\n")) {
+      uwc_udp_init();
     }
   }
-  ESP_LOGW(uwc_tag_task, "Exited!");
+  uwc_event_udp_killself();
   vTaskDelete(NULL);
 }

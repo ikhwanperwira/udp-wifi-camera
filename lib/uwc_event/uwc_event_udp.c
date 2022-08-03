@@ -3,6 +3,10 @@
 static bool isUdpTaskStart = false;
 
 uwcEvent_t uwc_event_udp_kill(void) {
+  if (!isUdpTaskStart) {
+    ESP_LOGW(uwc_tag_event, "Already killed!");
+    return;
+  }
   ESP_LOGI(uwc_tag_event, "Killing UDP task...");
   timeoutCounter = 1;
   isUdpTaskStart = false;
@@ -12,6 +16,10 @@ uwcEvent_t uwc_event_udp_kill(void) {
 }
 
 uwcEvent_t uwc_event_udp_killself(void) {
+  if (!isUdpTaskStart) {
+    ESP_LOGW(uwc_tag_event, "Already killed!");
+    return;
+  }
   ESP_LOGI(uwc_tag_event, "Killing my self...");
   timeoutCounter = 1;
   isUdpTaskStart = false;
@@ -126,16 +134,3 @@ uwcEvent_t uwc_event_udp_setup_with_udp(void) {
 uwcEvent_t uwc_event_udp_interrupt_handshake(void) {
   interruptHandshake = true;
 }
-
-// uwcEvent_t uwc_event_udp_kill(void) {
-//   ESP_LOGI(uwc_tag_event, "Killing UDP task...");
-//   vTaskDelete(uwc_taskHandle_udp);
-//   ESP_LOGI(uwc_tag_event, "Kill UDP task done!");
-// }
-
-// uwcEvent_t uwc_event_udp_restart(void) {
-//   ESP_LOGI(uwc_tag_event, "Restarting UDP task...");
-//   timeoutCounter = 0;
-
-//   ESP_LOGI(uwc_tag_event, "Restart UDP task done!");
-// }

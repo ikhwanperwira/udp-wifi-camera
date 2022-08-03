@@ -6,6 +6,8 @@ bool interruptHandshake = false;
 u8_t timeoutCounter = 1;
 bool isUdpInit = false;
 
+static u16_t CLNT_PORT = 9999;
+
 static char uwcUdpBufRX[UDP_BUF_SIZE];
 static char uwcUdpBufTX[UDP_BUF_SIZE];
 
@@ -13,6 +15,7 @@ static int uwcSock = 0;
 static bool isHandled = false;
 
 struct sockaddr_in destAddr;
+struct sockaddr_in clientAddr;
 struct sockaddr_storage sourceAddr;
 struct timeval timeout;
 static socklen_t socklen = sizeof(sourceAddr);
@@ -50,12 +53,26 @@ esp_err_t uwc_udp_init() {
   destAddr.sin_family = AF_INET;
   destAddr.sin_port = htons(SERV_PORT);
 
+  clientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  clientAddr.sin_family = AF_INET;
+  clientAddr.sin_port = htons(CLNT_PORT);
+
   uwcSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (uwcSock < 0) {
     ESP_LOGE(uwc_tag_udp, "Unable to create socket: errno %d", errno);
     return ESP_FAIL;
   }
+
   uwc_udp_set_timeout(1, 0);
+  int opt = 1;
+  setsockopt(uwcSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  int err = bind(uwcSock, (struct sockaddr*)&clientAddr, sizeof(clientAddr));
+  if (err < 0) {
+    ESP_LOGE(uwc_tag_udp, "Socket unable to bind: errno %d", errno);
+  }
+  ESP_LOGI(uwc_tag_udp, "Socket bound, port %d", 9999);
+
   uwc_udp_flush();
   uwc_udp_handshake();
 

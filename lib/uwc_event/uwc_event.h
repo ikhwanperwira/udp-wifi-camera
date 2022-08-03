@@ -171,9 +171,4 @@ uwcEvent_t uwc_event_udp_kill(void);
  */
 uwcEvent_t uwc_event_udp_killself(void);
 
-// /**
-//  * @brief Force UDP handshake.
-//  */
-// uwcEvent_t uwc_event_udp_restart(void);
-
 #endif

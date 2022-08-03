@@ -11,7 +11,6 @@
 
 #include "freertos/projdefs.h"
 #include "uwc_event.h"
-// #include "uwc_udp.h"
 
 // Type for uwc task.
 typedef void uwcTask_t;

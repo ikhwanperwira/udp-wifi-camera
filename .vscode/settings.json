@@ -1,0 +1,31 @@
+{
+  "files.associations": {
+    "stdio.h": "c",
+    "esp_log.h": "c",
+    "esp_camera.h": "c",
+    "string.h": "c",
+    "gpio.h": "c",
+    "task.h": "c",
+    "thread": "c",
+    "wifi_cfg.h": "c",
+    "uwc_wifi_cfg.h": "c",
+    "uwc_event.h": "c",
+    "uwc_eol_remover.h": "c",
+    "*.tcc": "c",
+    "cstdlib": "c",
+    "memory": "c",
+    "uwc_udp.h": "c",
+    "uwc_task.h": "c",
+    "esp_wifi.h": "c",
+    "esp_err.h": "c",
+    "uwc_led.h": "c",
+    "uwc_tag.h": "c",
+    "uwc_nvs_task": "c",
+    "uwc_startup_task": "c",
+    "projdefs.h": "c",
+    "stdbool.h": "c",
+    "uwc_cam.h": "c",
+    "sdkconfig.h": "c"
+  },
+  "files.eol": "\n"
+}

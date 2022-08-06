@@ -1,4 +1,3 @@
-from time import sleep
 from multiprocessing import Pipe
 
 def frame_collector(clients):

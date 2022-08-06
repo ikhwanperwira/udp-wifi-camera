@@ -65,34 +65,30 @@ uwcEvent_t uwc_event_cam_stream(void) {
     ESP_LOGE(uwc_tag_event, "Camera get frame buffer failed!");
     return;
   }
-  ESP_LOGI(uwc_tag_event, "Camera capture test oke!");
+  ESP_LOGI(uwc_tag_event, "Camera capture test OK with size: %u",
+           uwcCamFb->len);
   uwc_cam_close();
 
-  size_t quotient;
-  size_t remainder;
-  unsigned int i;
-  const char endOfJpeg[2] = {0xff, 0xd9};
-
   for (;;) {  // Streaming data...
-  start_stream:
-    uwc_cam_open();
-    quotient = uwcCamFb->len / UDP_BUF_SIZE;
-    remainder = uwcCamFb->len % UDP_BUF_SIZE;
-    for (i = 0; i < quotient; i++) {
-      if (uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
-                           UDP_BUF_SIZE) < 0) {
-        ESP_LOGE(uwc_tag_event, "Error in itteration: %i", i);
-        uwc_udp_send_raw((const void*)&endOfJpeg, 2);
-        uwc_cam_close();
-        goto start_stream;
-      }
+    camera_fb_t* fb = esp_camera_fb_get();
+    size_t quotient = uwcCamFb->len / UDP_BUF_SIZE;
+    size_t remainder = uwcCamFb->len % UDP_BUF_SIZE;
+    ssize_t sentLen;
+    unsigned int i = 0;
+    for (; i < quotient; i++) {  // sending packet by packet.
+      do {
+        sentLen = uwc_udp_send_raw(
+            (const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)), UDP_BUF_SIZE);
+      } while (sentLen < 0);
+      // ESP_LOGE(uwc_tag_event, "Error in itteration: %i", i);
+      // uwc_cam_close();
+      // continue; // I expect it continue to the top level
     }
-    if (uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
-                         remainder) < 0) {
+    if (remainder) {  // last packet to be sent if remainder exist
+      uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
+                       remainder);
       ESP_LOGE(uwc_tag_event, "Error in last itteration!");
-      uwc_cam_close();
-      continue;
     }
-    uwc_cam_close();
+    esp_camera_fb_return(fb);  // sent another frame
   }
 }

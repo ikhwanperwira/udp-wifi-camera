@@ -24,7 +24,7 @@
 /**
  * @brief LED initialization status.
  */
-extern bool uwcIsLedInit;
+extern bool uwcLedIsInit;
 
 /**
  * @brief Initializing built-in LED ESP32 Camera AI-Thinker mode output.

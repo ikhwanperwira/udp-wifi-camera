@@ -6,13 +6,13 @@ uwcTask_t uwc_task_udp(void *udpFlag) {
   ESP_ERROR_CHECK(uwc_udp_init());
 
   for (;;) {
-    if (!uwcIsWifiInit) {
+    if (!uwcWifiIsInit) {
       continue;
     }
 
     uwc_udp_recv();
 
-    if (!(timeoutCounter % 10)) {
+    if (!(uwcUdpTimeoutCount % 10)) {
       ESP_LOGW(uwc_tag_task, "No ACK from server, reinit UDP...");
       ESP_ERROR_CHECK(uwc_udp_init());
     }
@@ -37,6 +37,8 @@ uwcTask_t uwc_task_udp(void *udpFlag) {
     // Cam handler.
     uwc_udp_on("$cam init\n", uwc_event_cam_init, NULL);
     uwc_udp_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
+    uwc_udp_on("$cam grab\n", uwc_event_cam_grab, NULL);
+    uwc_udp_on("$cam stream\n", uwc_event_cam_stream, NULL);
 
     // WiFi handler.
     uwc_udp_on("$wifi setup\n", uwc_event_wifi_setup_with_udp, NULL);

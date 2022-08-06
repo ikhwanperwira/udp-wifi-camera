@@ -52,6 +52,16 @@ uwcEvent_t uwc_event_cam_init(void);
 uwcEvent_t uwc_event_cam_deinit(void);
 
 /**
+ * @brief Grab current frame buffer and send through UDP socket.
+ */
+uwcEvent_t uwc_event_cam_grab(void);
+
+/**
+ * @brief Stream frame buffer through UDP socket.
+ */
+uwcEvent_t uwc_event_cam_stream(void);
+
+/**
  * @brief Init NVS.
  */
 uwcEvent_t uwc_event_nvs_init(void);

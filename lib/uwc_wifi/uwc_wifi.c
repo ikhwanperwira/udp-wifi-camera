@@ -1,12 +1,14 @@
 #include "uwc_wifi.h"
 
-int s_retry_num = 0;
+static esp_err_t err;
+
+/* FreeRTOS event group to signal when we are connected*/
+static EventGroupHandle_t s_wifi_event_group;
+static int s_retry_num;
 
 char WIFI_SSID[32] = "uwc";
 char WIFI_PASW[32] = "87654321";
-
-bool uwcIsWifiInit = false;
-static esp_err_t err;
+bool uwcWifiIsInit = false;
 
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data) {
@@ -14,7 +16,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
              event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    uwcIsWifiInit = false;
+    uwcWifiIsInit = false;
     if (s_retry_num < MAX_TRY) {
       esp_wifi_connect();
       s_retry_num++;
@@ -34,7 +36,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 }
 
 esp_err_t uwc_wifi_init_sta(void) {
-  if (uwcIsWifiInit) {
+  if (uwcWifiIsInit) {
     ESP_LOGW(uwc_tag_wifi, "WiFi already initialized!");
     return ESP_OK;
   }
@@ -86,22 +88,26 @@ esp_err_t uwc_wifi_init_sta(void) {
   if (bits & WIFI_CONNECTED_BIT) {
     ESP_LOGI(uwc_tag_wifi, "Connected to ap SSID:%s password:%s", WIFI_SSID,
              WIFI_PASW);
+    if (tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &uwcWifiIpInfo)) {
+      ESP_LOGE(uwc_tag_wifi, "Error getting IP info!");
+      return ESP_FAIL;
+    }
     ESP_LOGI(uwc_tag_wifi, "WiFi has been initialized!");
-    uwcIsWifiInit = true;
+    uwcWifiIsInit = true;
   } else if (bits & WIFI_FAIL_BIT) {
     ESP_LOGI(uwc_tag_wifi, "Failed to connect to SSID:%s, password:%s",
              WIFI_SSID, WIFI_PASW);
-    uwcIsWifiInit = false;
+    uwcWifiIsInit = false;
   } else {
     ESP_LOGE(uwc_tag_wifi, "UNEXPECTED EVENT");
-    uwcIsWifiInit = false;
+    uwcWifiIsInit = false;
   }
 
   return err;
 }
 
 esp_err_t uwc_wifi_deinit_sta(void) {
-  if (!uwcIsWifiInit) {
+  if (!uwcWifiIsInit) {
     ESP_LOGE(uwc_tag_wifi, "WiFi already deinitialized!");
     return ESP_OK;
   }
@@ -110,7 +116,7 @@ esp_err_t uwc_wifi_deinit_sta(void) {
 
   if (!err) {
     ESP_LOGI(uwc_tag_wifi, "WiFi has been deinitialized!");
-    uwcIsWifiInit = false;
+    uwcWifiIsInit = false;
     return err;
   }
 

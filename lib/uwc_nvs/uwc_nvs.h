@@ -18,8 +18,8 @@
 #include "uwc_tag.h"
 
 // NVS initialization status.
-extern bool uwcIsNvsInit;
-extern bool uwcIsNvsOpen;
+extern bool uwcNvsIsInit;
+extern bool uwcNvsIsOpen;
 
 /**
  * @brief Handler for NVS in "uwc" storage.

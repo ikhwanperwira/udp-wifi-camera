@@ -8,9 +8,9 @@ uwcEvent_t uwc_event_udp_kill(void) {
     return;
   }
   ESP_LOGI(uwc_tag_event, "Killing UDP task...");
-  timeoutCounter = 1;
+  uwcUdpTimeoutCount = 1;
+  uwcUdpIsInit = false;
   isUdpTaskStart = false;
-  isUdpInit = false;
   vTaskDelete(uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Kill UDP task done!");
 }
@@ -21,13 +21,18 @@ uwcEvent_t uwc_event_udp_killself(void) {
     return;
   }
   ESP_LOGI(uwc_tag_event, "Killing my self...");
-  timeoutCounter = 1;
+  uwcUdpTimeoutCount = 1;
+  uwcUdpIsInit = false;
   isUdpTaskStart = false;
-  isUdpInit = false;
 }
 
 uwcEvent_t uwc_event_udp_init(void) {
-  while (!uwcIsWifiInit) {
+  if (isUdpTaskStart) {
+    ESP_LOGW(uwc_tag_event, "UDP task already started!");
+    return;
+  }
+
+  while (!uwcWifiIsInit) {
     ESP_LOGW(uwc_tag_event,
              "WiFi is not initialized yet, initializing wifi...");
     uwc_event_wifi_init();
@@ -36,34 +41,29 @@ uwcEvent_t uwc_event_udp_init(void) {
     }
   }
 
-  if (isUdpTaskStart) {
-    ESP_LOGW(uwc_tag_event, "UDP task already started!");
-    return;
-  }
-
-  if (isUdpInit) {
+  if (uwcUdpIsInit) {
     uwc_event_udp_kill();
   }
 
-  if (tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &uwcIPInfo)) {
-    ESP_LOGE(uwc_tag_event, "Error getting IP info!");
-    return;
-  }
-
   char gw[16];
-  sprintf(gw, IPSTR, IP2STR(&uwcIPInfo.gw));
+  sprintf(gw, IPSTR, IP2STR(&uwcWifiIpInfo.gw));
   strcpy(SERV_IPV4, gw);
-  SERV_PORT = 8888;
+  SERV_PORT = 39876;
 
   ESP_LOGI(uwc_tag_event, "Creating UDP task...");
-  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 7,
+  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 24,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
   isUdpTaskStart = true;
 }
 
 uwcEvent_t uwc_event_udp_reinit(void) {
-  while (!uwcIsWifiInit) {
+  if (isUdpTaskStart) {
+    ESP_LOGW(uwc_tag_event, "UDP task already started!");
+    return;
+  }
+
+  while (!uwcWifiIsInit) {
     ESP_LOGW(uwc_tag_event,
              "WiFi is not initialized yet, initializing wifi...");
     uwc_event_wifi_init();
@@ -72,17 +72,12 @@ uwcEvent_t uwc_event_udp_reinit(void) {
     }
   }
 
-  if (isUdpTaskStart) {
-    ESP_LOGW(uwc_tag_event, "UDP task already started!");
-    return;
-  }
-
-  if (isUdpInit) {
+  if (uwcUdpIsInit) {
     uwc_event_udp_kill();
   }
 
   ESP_LOGI(uwc_tag_event, "Creating UDP task...");
-  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 7,
+  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 24,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
   isUdpTaskStart = true;
@@ -110,27 +105,49 @@ uwcEvent_t uwc_event_udp_recv(void) {
 }
 
 uwcEvent_t uwc_event_udp_setup_with_uart(void) {
-  char portStrng[6];
-  uwc_uart_input("Enter IPV4: ", SERV_IPV4, true, true);
-  uwc_uart_input("Enter PORT: ", portStrng, true, true);
+  char ipv4Str[32];
+  char portStr[8];
+  char confirm[4];
+  uwc_uart_input("Enter IPV4: ", ipv4Str, true, true);
+  uwc_uart_input("Enter PORT: ", portStr, true, true);
+  uwc_uart_input("Confirm?(y/n): ", confirm, false, true);
 
-  SERV_PORT = (u16_t)atoi(portStrng);
+  if (strcmp(confirm, "y")) {
+    ESP_LOGW(uwc_tag_event, "UDP setup aborted!");
+    return;
+  }
+
+  if (strlen(ipv4Str) > 16 || strlen(portStr) > 16) {
+    ESP_LOGE(uwc_tag_event, "Invalid input, aborted!");
+    return;
+  }
+
+  strcpy(SERV_IPV4, ipv4Str);
+  SERV_PORT = (u16_t)atoi(portStr);
 
   uwc_uart_send("UDP setup has been updated!\n");
 }
 
 uwcEvent_t uwc_event_udp_setup_with_udp(void) {
-  ESP_LOGI(uwc_tag_event, "Setting UDP destinastion through UDP...");
-  char portStrng[6];
-  uwc_udp_input("Enter IPV4: ", SERV_IPV4, true, true);
-  uwc_udp_input("Enter PORT: ", portStrng, true, true);
+  char ipv4Str[32];
+  char portStr[8];
+  char confirm[4];
+  uwc_udp_input("Enter IPV4: ", ipv4Str, true, true);
+  uwc_udp_input("Enter PORT: ", portStr, true, true);
+  uwc_udp_input("Confirm?(y/n): ", confirm, false, true);
 
-  SERV_PORT = (u16_t)atoi(portStrng);
+  if (strcmp(confirm, "y")) {
+    uwc_udp_send("UDP setup aborted!\n");
+    return;
+  }
+
+  if (strlen(ipv4Str) > 16 || strlen(portStr) > 16) {
+    uwc_udp_send("Invalid input, aborted!\n");
+    return;
+  }
+
+  strcpy(SERV_IPV4, ipv4Str);
+  SERV_PORT = (u16_t)atoi(portStr);
 
   uwc_udp_send("UDP setup has been updated!\n");
-  ESP_LOGI(uwc_tag_event, "Setting UDP done!");
-}
-
-uwcEvent_t uwc_event_udp_interrupt_handshake(void) {
-  interruptHandshake = true;
 }

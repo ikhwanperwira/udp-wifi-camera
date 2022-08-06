@@ -1,11 +1,5 @@
 #include "uwc_udp.h"
 
-char SERV_IPV4[16] = "192.168.43.1";
-u16_t SERV_PORT = 8888;
-u16_t CLNT_PORT = 9999;
-bool uwcUdpIsInit = false;
-u8_t uwcUdpTimeoutCount = 1;
-
 static char uwcUdpBufRX[UDP_BUF_SIZE];
 static char uwcUdpBufTX[UDP_BUF_SIZE];
 static int uwcUdpSock = 0;
@@ -16,6 +10,12 @@ struct sockaddr_in clientAddr;
 struct sockaddr_storage sourceAddr;
 static socklen_t sourceAddrLen = sizeof(sourceAddr);
 struct timeval uwcUdpTimeout;
+
+char SERV_IPV4[16] = "192.168.43.1";
+u16_t SERV_PORT = 39876;
+u16_t CLNT_PORT = 9999;
+bool uwcUdpIsInit = false;
+u8_t uwcUdpTimeoutCount = 1;
 
 void uwc_udp_handshake() {
   ESP_LOGW(uwc_tag_udp, "Sending SYN to %s:%d", SERV_IPV4, SERV_PORT);
@@ -34,7 +34,7 @@ void uwc_udp_set_timeout(u8_t sec, u8_t usec) {
 }
 
 esp_err_t uwc_udp_init() {
-  if (!uwcIsWifiInit) {
+  if (!uwcWifiIsInit) {
     return ESP_FAIL;
   }
 
@@ -56,11 +56,13 @@ esp_err_t uwc_udp_init() {
     return ESP_FAIL;
   }
 
+  uwc_udp_set_timeout(1, 0);
   int opt = 1;
   setsockopt(uwcUdpSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
   if (bind(uwcUdpSock, (struct sockaddr*)&clientAddr, sizeof(clientAddr)) < 0) {
     ESP_LOGE(uwc_tag_udp, "Socket unable to bind: errno %d", errno);
+    return ESP_FAIL;
   }
   ESP_LOGI(uwc_tag_udp, "Socket bound, port %d", 9999);
 
@@ -75,7 +77,7 @@ esp_err_t uwc_udp_init() {
 
 esp_err_t uwc_udp_send(char* data) {
   uwcUdpTimeoutCount = 1;
-  if (!uwcIsWifiInit) {
+  if (!uwcWifiIsInit) {
     return ESP_FAIL;
   }
 
@@ -89,7 +91,7 @@ esp_err_t uwc_udp_send(char* data) {
 }
 
 int uwc_udp_recv(void) {
-  if (!uwcIsWifiInit) {
+  if (!uwcWifiIsInit) {
     return 0;
   }
 
@@ -117,7 +119,7 @@ bool uwc_udp_is_data_match(char* check) {
 }
 
 void uwc_udp_on(char* data, void on_match(), void on_unmatch()) {
-  if (uwcUdpIsInit) {  // return if another event already handled this data.
+  if (uwcUdpIsHandled) {  // return if another event already handled this data.
     return;
   }
 
@@ -172,4 +174,9 @@ void uwc_udp_input(char* msg, char* val_out, bool show_echo, bool remove_eol) {
     uwc_udp_send(val_out);
     uwc_udp_send("\n");
   }
+}
+
+ssize_t uwc_udp_send_raw(const void* data, size_t len) {
+  return sendto(uwcUdpSock, data, len, 0, (struct sockaddr*)&destAddr,
+                sizeof(destAddr));
 }

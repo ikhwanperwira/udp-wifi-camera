@@ -28,7 +28,7 @@
 #include "uwc_tag.h"
 #include "uwc_wifi.h"
 
-#define UDP_BUF_SIZE 512
+#define UDP_BUF_SIZE 1024
 
 extern char SERV_IPV4[16];       // UDP server target IP.
 extern u16_t SERV_PORT;          // UDP server targetPORT.
@@ -123,5 +123,14 @@ void uwc_udp_debug(void);
  *  nothing.
  */
 void uwc_udp_input(char* msg, char* val_out, bool show_echo, bool remove_eol);
+
+/**
+ * @brief Send raw data bytes.
+ * @param data: Pointer to the data.
+ * @param len: Length of data to be sent.
+ * @return
+ *  Total bytes sent, If return value < 0, then error happened!
+ */
+ssize_t uwc_udp_send_raw(const void* data, size_t len);
 
 #endif

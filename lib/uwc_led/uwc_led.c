@@ -1,10 +1,11 @@
 #include "uwc_led.h"
 
 static esp_err_t err;
-bool uwcIsLedInit = false;
+
+bool uwcLedIsInit = false;
 
 esp_err_t uwc_led_init(void) {
-  if (uwcIsLedInit) {
+  if (uwcLedIsInit) {
     ESP_LOGW(uwc_tag_led, "LED already initialized!");
     return ESP_OK;
   }
@@ -14,17 +15,17 @@ esp_err_t uwc_led_init(void) {
 
   if (!err) {
     ESP_LOGI(uwc_tag_led, "LED has been initialized!");
-    uwcIsLedInit = true;
+    uwcLedIsInit = true;
     return err;
   }
 
-  uwcIsLedInit = false;
+  uwcLedIsInit = false;
   ESP_LOGE(uwc_tag_led, "LED init failure!");
   return err;
 }
 
 esp_err_t uwc_led_set(bool state) {
-  if (!uwcIsLedInit) {
+  if (!uwcLedIsInit) {
     ESP_LOGW(uwc_tag_led, "LED is not initialized yet, initializing led...");
     uwc_led_init();
     return uwc_led_set(LED_ON);

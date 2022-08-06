@@ -1,11 +1,12 @@
 #include "uwc_nvs.h"
 
 static esp_err_t err;
-bool uwcIsNvsInit = false;
-bool uwcIsNvsOpen = false;
+
+bool uwcNvsIsInit = false;
+bool uwcNvsIsOpen = false;
 
 esp_err_t uwc_nvs_init(void) {
-  if (uwcIsNvsInit) {
+  if (uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS already initialized!");
     return ESP_OK;
   }
@@ -21,7 +22,7 @@ esp_err_t uwc_nvs_init(void) {
 
   if (!err) {
     ESP_LOGI(uwc_tag_nvs, "NVS has been initialized!");
-    uwcIsNvsInit = true;
+    uwcNvsIsInit = true;
     return err;
   }
 
@@ -30,12 +31,12 @@ esp_err_t uwc_nvs_init(void) {
 }
 
 esp_err_t uwc_nvs_open(void) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (uwcIsNvsOpen) {
+  if (uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS already opened!");
     return ESP_OK;
   }
@@ -44,7 +45,7 @@ esp_err_t uwc_nvs_open(void) {
   err = nvs_open("uwc", NVS_READWRITE, &uwcNvsHandler);
   if (!err) {
     ESP_LOGI(uwc_tag_nvs, "NVS has been opened!");
-    uwcIsNvsOpen = true;
+    uwcNvsIsOpen = true;
     return err;
   }
 
@@ -53,12 +54,12 @@ esp_err_t uwc_nvs_open(void) {
 }
 
 esp_err_t uwc_nvs_read(const char* key, char* val_out, size_t* len) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not opened yet!");
     return ESP_OK;
   }
@@ -79,12 +80,12 @@ esp_err_t uwc_nvs_read(const char* key, char* val_out, size_t* len) {
 }
 
 esp_err_t uwc_nvs_write(const char* key, char* val_in) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not opened yet!");
     return ESP_OK;
   }
@@ -101,12 +102,12 @@ esp_err_t uwc_nvs_write(const char* key, char* val_in) {
 }
 
 esp_err_t uwc_nvs_erase(const char* key) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not opened yet!");
     return ESP_OK;
   }
@@ -122,12 +123,12 @@ esp_err_t uwc_nvs_erase(const char* key) {
 }
 
 esp_err_t uwc_nvs_commit(void) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not opened yet!");
     return ESP_OK;
   }
@@ -139,7 +140,7 @@ esp_err_t uwc_nvs_commit(void) {
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not opened yet!");
     return ESP_OK;
   }
@@ -149,12 +150,12 @@ esp_err_t uwc_nvs_commit(void) {
 }
 
 esp_err_t uwc_nvs_close(void) {
-  if (!uwcIsNvsInit) {
+  if (!uwcNvsIsInit) {
     ESP_LOGW(uwc_tag_nvs, "NVS is not initialized yet!");
     return ESP_OK;
   }
 
-  if (!uwcIsNvsOpen) {
+  if (!uwcNvsIsOpen) {
     ESP_LOGW(uwc_tag_nvs, "NVS already closed!");
     return ESP_OK;
   }
@@ -162,6 +163,6 @@ esp_err_t uwc_nvs_close(void) {
   // Close NVS
   nvs_close(uwcNvsHandler);
   ESP_LOGI(uwc_tag_nvs, "NVS has been closed!");
-  uwcIsNvsOpen = false;
+  uwcNvsIsOpen = false;
   return err;
 };

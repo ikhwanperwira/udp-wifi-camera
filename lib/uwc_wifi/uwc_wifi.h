@@ -33,19 +33,11 @@
 // WiFI Setup
 #define WIFI_AUTH WIFI_AUTH_WPA2_PSK
 #define MAX_TRY 20
+
 extern char WIFI_SSID[32];
 extern char WIFI_PASW[32];
-
-/* FreeRTOS event group to signal when we are connected*/
-EventGroupHandle_t s_wifi_event_group;
-
-extern int s_retry_num;
-
-// IP when connected to AP.
-tcpip_adapter_ip_info_t uwcIPInfo;
-
-// WiFI status.
-extern bool uwcIsWifiInit;
+tcpip_adapter_ip_info_t uwcWifiIpInfo;  // IP when connected to AP.
+extern bool uwcWifiIsInit;              // WiFI initialization status.
 
 esp_err_t uwc_wifi_init_sta(void);
 esp_err_t uwc_wifi_deinit_sta(void);

@@ -24,7 +24,8 @@
     "uwc_startup_task": "c",
     "projdefs.h": "c",
     "condition_variable": "c",
-    "future": "c"
+    "future": "c",
+    "stdbool.h": "c"
   },
   "files.eol": "\n"
 }

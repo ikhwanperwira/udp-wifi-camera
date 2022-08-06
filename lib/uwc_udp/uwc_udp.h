@@ -30,27 +30,11 @@
 
 #define UDP_BUF_SIZE 512
 
-extern char SERV_IPV4[16];
-extern u16_t SERV_PORT;
-extern bool interruptHandshake;  // signal interrupt when handshaking.
-extern bool isUdpInit;
-extern u8_t timeoutCounter;  // timeout counted when length == 0;
-
-// /**
-//  * @brief Set target UDP server IP.
-//  * @param ip: IP of UDP server.
-//  * @return
-//  *  nothing.
-//  */
-// void uwc_udp_set_ip(char* ip);
-
-// /**
-//  * @brief Set target UDP server port.
-//  * @param port: Port of UDP server.
-//  * @return
-//  *  nothing.
-//  */
-// void uwc_udp_set_port(u16_t port);
+extern char SERV_IPV4[16];       // UDP server target IP.
+extern u16_t SERV_PORT;          // UDP server targetPORT.
+extern u16_t CLNT_PORT;          // Outbound PORT.
+extern bool uwcUdpIsInit;        // UDP init status.
+extern u8_t uwcUdpTimeoutCount;  // Timeout counted when no data received.
 
 /**
  * @brief Set target UDP server port.
@@ -122,7 +106,11 @@ void uwc_udp_on(char* data, void on_match(), void on_unmatch());
  */
 void uwc_udp_flush(void);
 
-// debug
+/**
+ * @brief For debug purpose.
+ * @return
+ *  nothing.
+ */
 void uwc_udp_debug(void);
 
 /**

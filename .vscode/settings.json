@@ -22,7 +22,9 @@
     "uwc_tag.h": "c",
     "uwc_nvs_task": "c",
     "uwc_startup_task": "c",
-    "projdefs.h": "c"
+    "projdefs.h": "c",
+    "condition_variable": "c",
+    "future": "c"
   },
   "files.eol": "\n"
 }

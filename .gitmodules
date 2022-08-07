@@ -2,3 +2,7 @@
 	path = components/esp32-camera
 	url = https://github.com/espressif/esp32-camera.git
 	branch = master
+[submodule "lib/zlib-PIO"]
+	path = lib/zlib-PIO
+	url = https://github.com/jkirsons/zlib-PIO
+	branch = master

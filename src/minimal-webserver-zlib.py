@@ -3,33 +3,33 @@ from multiprocessing import Pipe
 def frame_collector(clients):
   import io
   import socket
+  from zlib import decompress
+  
   SERV_IPV4, SERV_PORT = ('192.168.145.200', 39876)
   udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   udpSock.bind((SERV_IPV4,SERV_PORT))
   isWriting = False
-  isConnected = False
+  udpSock.sendto(b'$cam init\n',CLNT_ADDR)
+  udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
   try:
     while 1:
-      dataRecv, CLNT_ADDR = udpSock.recvfrom(65507)
-
-      # if not isConnected:
-      #   if dataRecv == b'SYN\n':
-      #     udpSock.sendto(b'ACK\n',CLNT_ADDR)
-      #     udpSock.sendto(b'$cam init\n',CLNT_ADDR)
-      #     udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
-      #     isConnected = True
+      dataRecv, CLNT_ADDR = udpSock.recvfrom(4096)
 
       if not isWriting:
-        if dataRecv[:2] == b'\xff\xd8': # Start of JPEG
+        if dataRecv[:3] == b'x\x01\x9d': # Start of ZLIB (0xf8 ,0x01, 0x9d)
           isWriting = True
           buf = io.BytesIO()
+          
 
       if isWriting:
         buf.write(dataRecv)
-        if dataRecv[-2:] == b'\xff\xd9': # End of JPEG
+        if len(dataRecv) != 1024: # End of ZLIB
           isWriting = False
           buf.seek(0)
-          frame = buf.read()
+          try: frame = decompress(buf.read())
+          except Exception as e: 
+            print(e)
+            continue
           d = dict(clients) # Make copy into local dict
           for handle, sender in d.items():
             try:

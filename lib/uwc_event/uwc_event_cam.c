@@ -21,31 +21,44 @@ uwcEvent_t uwc_event_cam_grab(void) {
     }
   }
 
-  uwcEventErr = uwc_cam_open();
-  if (uwcEventErr) {
-    ESP_LOGE(uwc_tag_event, "Camera get frame buffer failed!");
-    return;
-  }
+  char compressedFb[16384];
 
-  ESP_LOGI(uwc_tag_event, "Size of buffer: %u", uwcCamFb->len);
-  size_t quotient = uwcCamFb->len / UDP_BUF_SIZE;
-  size_t remainder = uwcCamFb->len % UDP_BUF_SIZE;
-  unsigned int i = 0;
-  for (i = 0; i < quotient; i++) {
-    if (uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
-                         UDP_BUF_SIZE) < 0) {
-      ESP_LOGE(uwc_tag_event, "Error in itteration: %i", i);
-      uwc_cam_close();
-      return;
+  camera_fb_t *fb = esp_camera_fb_get();
+
+  z_stream deflstream;
+
+  deflstream.zalloc = Z_NULL;
+  deflstream.zfree = Z_NULL;
+  deflstream.opaque = Z_NULL;
+
+  // Prepare compression
+  deflstream.avail_in = (uInt)fb->len;
+  deflstream.next_in = (Bytef *)fb->buf;
+  deflstream.avail_out = (uInt)sizeof(compressedFb);
+  deflstream.next_out = (Bytef *)compressedFb;
+
+  // Actual compression
+  deflateInit(&deflstream, Z_BEST_SPEED);
+  deflate(&deflstream, Z_FINISH);
+  deflateEnd(&deflstream);
+
+  ESP_LOGI(uwc_tag_event, "Actual Size: %u", fb->len);
+  esp_camera_fb_return(fb);
+
+  char *from = &compressedFb[0];
+  size_t toSend = (size_t)deflstream.total_out;
+  ESP_LOGI(uwc_tag_event, "Compressed:Actual = %u:%u",
+           (size_t)deflstream.total_out,
+           (size_t)deflstream.total_in);  // Just for debugging
+
+  for (int i = 0; toSend > 0; i++) {
+    size_t sendSize = toSend > UDP_BUF_SIZE ? UDP_BUF_SIZE : toSend;
+    while (uwc_udp_send_raw(from, sendSize) < 0) {
+      ESP_LOGW(uwc_tag_event, "Retry in itteration: %i", i);
     }
+    toSend -= sendSize;
+    from += sendSize;
   }
-  if (uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
-                       remainder) < 0) {
-    uwc_cam_close();
-    return;
-  }
-
-  uwc_cam_close();
 }
 
 uwcEvent_t uwc_event_cam_stream(void) {
@@ -60,6 +73,12 @@ uwcEvent_t uwc_event_cam_stream(void) {
     }
   }
 
+  // Initializing for compression (zlib)
+  z_stream deflstream;
+  deflstream.zalloc = Z_NULL;
+  deflstream.zfree = Z_NULL;
+  deflstream.opaque = Z_NULL;
+
   uwcEventErr = uwc_cam_open();
   if (uwcEventErr) {
     ESP_LOGE(uwc_tag_event, "Camera get frame buffer failed!");
@@ -67,28 +86,63 @@ uwcEvent_t uwc_event_cam_stream(void) {
   }
   ESP_LOGI(uwc_tag_event, "Camera capture test OK with size: %u",
            uwcCamFb->len);
+  // Prepare compression
+  char compressedFb[16384];
+  deflstream.avail_in = (uInt)uwcCamFb->len;
+  deflstream.next_in = (Bytef *)uwcCamFb->buf;
+  deflstream.avail_out = (uInt)sizeof(compressedFb);
+  deflstream.next_out = (Bytef *)compressedFb;
+
+  // Actual compression
+  deflateInit(&deflstream, Z_BEST_SPEED);
+  deflate(&deflstream, Z_FINISH);
+  deflateEnd(&deflstream);
+
+  ESP_LOGI(uwc_tag_event, "Compressed:Actual = %u:%u",
+           (size_t)deflstream.total_out,
+           (size_t)deflstream.total_in);  // Just for debugging
   uwc_cam_close();
 
-  for (;;) {  // Streaming data...
-    camera_fb_t* fb = esp_camera_fb_get();
-    size_t quotient = uwcCamFb->len / UDP_BUF_SIZE;
-    size_t remainder = uwcCamFb->len % UDP_BUF_SIZE;
-    ssize_t sentLen;
-    unsigned int i = 0;
-    for (; i < quotient; i++) {  // sending packet by packet.
-      do {
-        sentLen = uwc_udp_send_raw(
-            (const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)), UDP_BUF_SIZE);
-      } while (sentLen < 0);
-      // ESP_LOGE(uwc_tag_event, "Error in itteration: %i", i);
-      // uwc_cam_close();
-      // continue; // I expect it continue to the top level
+  for (;;) {              // streaming video...
+    z_stream deflstream;  // create struct
+
+    // I don't know what these do I just copied paste
+    deflstream.zalloc = Z_NULL;
+    deflstream.zfree = Z_NULL;
+    deflstream.opaque = Z_NULL;
+
+    // Prepare compression
+    camera_fb_t *fb =
+        esp_camera_fb_get();  // getting current JPEG frame buffer location
+    deflstream.avail_in = (uInt)fb->len;    // Set framebuffer length
+    deflstream.next_in = (Bytef *)fb->buf;  // Set location of framebuffer
+    esp_camera_fb_return(fb);
+    memset(&compressedFb[0], 0, 16384);
+    deflstream.avail_out =
+        (uInt)sizeof(compressedFb);  // alocated memory size for output
+    deflstream.next_out = (Bytef *)compressedFb;  // the output
+
+    // Actual compression
+    deflateInit(&deflstream, Z_BEST_SPEED);
+    deflate(&deflstream, Z_FINISH);  // What is Z_FINISH?
+    deflateEnd(&deflstream);         // Just doing it because its ending.
+
+    ESP_LOGI(uwc_tag_event, "Compressed:Actual = %u:%u",
+             (size_t)deflstream.total_out,
+             (size_t)deflstream.total_in);  // Just for debugging
+
+    char *from = &compressedFb[0];  // This var is just copy location  of output
+    size_t toSend =
+        (size_t)
+            deflstream.total_out;  // This just track remaining bytes to be sent
+
+    for (int i = 0; toSend > 0; i++) {  // Sending packet per packet...
+      size_t sendSize = toSend > UDP_BUF_SIZE ? UDP_BUF_SIZE : toSend;
+      while (uwc_udp_send_raw(from, sendSize) < 0) {
+        ESP_LOGW(uwc_tag_event, "Retry in itteration: %i", i);
+      }
+      toSend -= sendSize;
+      from += sendSize;
     }
-    if (remainder) {  // last packet to be sent if remainder exist
-      uwc_udp_send_raw((const void*)(uwcCamFb->buf + (i * UDP_BUF_SIZE)),
-                       remainder);
-      ESP_LOGE(uwc_tag_event, "Error in last itteration!");
-    }
-    esp_camera_fb_return(fb);  // sent another frame
   }
 }

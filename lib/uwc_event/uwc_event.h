@@ -19,6 +19,7 @@
 #include "uwc_uart.h"
 #include "uwc_udp.h"
 #include "uwc_wifi.h"
+#include "zlib.h"
 
 // Type for uwcEvent_t
 typedef void uwcEvent_t;

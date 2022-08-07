@@ -51,7 +51,7 @@ uwcEvent_t uwc_event_udp_init(void) {
   SERV_PORT = 39876;
 
   ESP_LOGI(uwc_tag_event, "Creating UDP task...");
-  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 24,
+  xTaskCreate(uwc_task_udp, "uwc_task_udp", 32768, NULL, 24,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
   isUdpTaskStart = true;
@@ -77,7 +77,7 @@ uwcEvent_t uwc_event_udp_reinit(void) {
   }
 
   ESP_LOGI(uwc_tag_event, "Creating UDP task...");
-  xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 24,
+  xTaskCreate(uwc_task_udp, "uwc_task_udp", 32768, NULL, 24,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
   isUdpTaskStart = true;

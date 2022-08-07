@@ -28,9 +28,9 @@ static const camera_config_t uwcCamCfg = {
 
     .pixel_format = PIXFORMAT_JPEG,  // YUV422,GRAYSCALE,RGB565,JPEG
     .frame_size =
-        FRAMESIZE_SVGA,  // QQVGA-QXGA Do not use sizes above QVGA when not JPEG
+        FRAMESIZE_VGA,  // QQVGA-QXGA Do not use sizes above QVGA when not JPEG
 
-    .jpeg_quality = 63,  // 0-63 lower number means higher quality
+    .jpeg_quality = 12,  // 0-63 lower number means higher quality
     .fb_count =
         2,  // if more than one, i2s runs in continuous mode. Use only with JPEG
     .grab_mode = CAMERA_GRAB_WHEN_EMPTY  // CAMERA_GRAB_LATEST. Sets when

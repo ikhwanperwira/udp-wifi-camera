@@ -9,14 +9,15 @@ def frame_collector(clients):
   udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   udpSock.bind((SERV_IPV4,SERV_PORT))
   isWriting = False
-  udpSock.sendto(b'$cam init\n',CLNT_ADDR)
-  udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
+  # udpSock.sendto(b'$cam init\n',CLNT_ADDR)
+  # udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
+  i = 0
   try:
     while 1:
       dataRecv, CLNT_ADDR = udpSock.recvfrom(4096)
 
       if not isWriting:
-        if dataRecv[:3] == b'x\x01\x9d': # Start of ZLIB (0xf8 ,0x01, 0x9d)
+        if dataRecv[:3] == b'x\x9c\x9d': # Start of ZLIB (0xf8 ,0x01, 0x9d)
           isWriting = True
           buf = io.BytesIO()
           
@@ -26,7 +27,10 @@ def frame_collector(clients):
         if len(dataRecv) != 1024: # End of ZLIB
           isWriting = False
           buf.seek(0)
-          try: frame = decompress(buf.read())
+          try: 
+            frame = decompress(buf.read())
+            print(i)
+            i+=1
           except Exception as e: 
             print(e)
             continue

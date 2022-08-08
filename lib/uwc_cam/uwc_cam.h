@@ -35,6 +35,8 @@
 
 extern bool uwcCamIsInit;  // Camera initialization status.
 extern camera_fb_t* uwcCamFb;
+extern char uwcCamFrameSize[8];
+extern char uwcCamJpegCompression[8];
 
 /**
  * @brief Initializing camera.

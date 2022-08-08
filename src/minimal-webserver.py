@@ -7,47 +7,51 @@ def frame_collector(clients):
   udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   udpSock.bind((SERV_IPV4,SERV_PORT))
   isWriting = False
-  isConnected = False
+  LOCK_CLNT_ADDR = None
+  # LOCK_CLNT_ADDR = ('192.168.145.105',9999)
   try:
     while 1:
-      dataRecv, CLNT_ADDR = udpSock.recvfrom(65507)
+      dataRecv, CLNT_ADDR = udpSock.recvfrom(2048)
 
-      # if not isConnected:
-      #   if dataRecv == b'SYN\n':
-      #     udpSock.sendto(b'ACK\n',CLNT_ADDR)
-      #     udpSock.sendto(b'$cam init\n',CLNT_ADDR)
-      #     udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
-      #     isConnected = True
+      if LOCK_CLNT_ADDR == CLNT_ADDR:
+        if not isWriting:
+          if dataRecv[:2] == b'\xff\xd8': # Start of JPEG
+            isWriting = True
+            buf = io.BytesIO()
 
-      if not isWriting:
-        if dataRecv[:2] == b'\xff\xd8': # Start of JPEG
-          isWriting = True
-          buf = io.BytesIO()
-
-      if isWriting:
-        buf.write(dataRecv)
-        if dataRecv[-2:] == b'\xff\xd9': # End of JPEG
-          isWriting = False
-          buf.seek(0)
-          frame = buf.read()
-          d = dict(clients) # Make copy into local dict
-          for handle, sender in d.items():
-            try:
-              sender.send(frame)
-            except: # Client has gone away?
-              del clients[handle]
+        if isWriting:
+          buf.write(dataRecv)
+          if dataRecv[-2:] == b'\xff\xd9': # End of JPEG
+            isWriting = False
+            buf.seek(0)
+            frame = buf.read()
+            d = dict(clients) # Make copy into local dict
+            for handle, sender in d.items():
+              try:
+                sender.send(frame)
+              except: # Client has gone away?
+                del clients[handle]
+      else:
+        if dataRecv == b'SYN\n':
+          udpSock.sendto(b'ACK\n',CLNT_ADDR)
+          udpSock.sendto(b'$cam init\n',CLNT_ADDR)
+          udpSock.sendto(b'$cam stream\n',CLNT_ADDR)
+          LOCK_CLNT_ADDR = CLNT_ADDR
   except KeyboardInterrupt: # ctrl-C
     pass
 
 def flask_service(clients): # process 2
   from flask import Flask, Response
+  from time import time
   app = Flask(__name__)
 
   def frame_consumer():
     receiver, sender = Pipe(False)
     clients[sender._handle] = sender
     while True:
+      t0 = time()
       yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + receiver.recv() + b'\r\n'
+      print(1/ (time() - t0))
 
   @app.route('/mjpeg')
   def mjpeg():

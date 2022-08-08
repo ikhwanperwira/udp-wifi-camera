@@ -1,3 +1,5 @@
+# EXPERIMENTAL!!!
+
 from multiprocessing import Pipe
 
 def frame_collector(clients):

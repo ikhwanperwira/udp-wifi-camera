@@ -28,7 +28,7 @@
 #include "uwc_tag.h"
 #include "uwc_wifi.h"
 
-#define UDP_BUF_SIZE 1024
+#define UDP_BUF_SIZE 1357  // Because youtube using 1357 too.
 
 extern char SERV_IPV4[16];       // UDP server target IP.
 extern u16_t SERV_PORT;          // UDP server targetPORT.

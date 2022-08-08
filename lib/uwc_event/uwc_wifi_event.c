@@ -72,6 +72,7 @@ uwcEvent_t uwc_event_wifi_setup_with_udp(void) {
   if (strlen((char *)WIFI_PASW) < 8) {
     ESP_LOGW(uwc_tag_event,
              "Warning! Password length is less than 8 characters!");
+    uwc_udp_send("Warning! Password length is less than 8 characters!");
   }
   uwc_udp_send("WiFi setup has been updated!\n");
 }

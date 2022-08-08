@@ -26,6 +26,7 @@ uwcTask_t uwc_task_uart(void *uartFlag) {
     uwc_uart_on("$cam init\n", uwc_event_cam_init, NULL);
     uwc_uart_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
     uwc_uart_on("$cam grab\n", uwc_event_cam_grab, NULL);
+    uwc_uart_on("$cam setup\n", uwc_event_cam_setup_with_uart, NULL);
 
     // WiFi handler.
     uwc_uart_on("$wifi init\n", uwc_event_wifi_init, NULL);

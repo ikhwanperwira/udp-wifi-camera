@@ -39,6 +39,7 @@ uwcTask_t uwc_task_udp(void *udpFlag) {
     uwc_udp_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
     uwc_udp_on("$cam grab\n", uwc_event_cam_grab, NULL);
     uwc_udp_on("$cam stream\n", uwc_event_cam_stream, NULL);
+    uwc_udp_on("$cam setup\n", uwc_event_cam_setup_with_udp, NULL);
 
     // WiFi handler.
     uwc_udp_on("$wifi setup\n", uwc_event_wifi_setup_with_udp, NULL);

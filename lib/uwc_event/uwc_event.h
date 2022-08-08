@@ -63,6 +63,18 @@ uwcEvent_t uwc_event_cam_grab(void);
 uwcEvent_t uwc_event_cam_stream(void);
 
 /**
+ * @brief Setup camera configuration through UART, deinit then init to apply
+ * changes.
+ */
+uwcEvent_t uwc_event_cam_setup_with_uart(void);
+
+/**
+ * @brief Setup camera configuration through UDP, deinit then init to apply
+ * changes.
+ */
+uwcEvent_t uwc_event_cam_setup_with_udp(void);
+
+/**
  * @brief Init NVS.
  */
 uwcEvent_t uwc_event_nvs_init(void);
@@ -101,6 +113,36 @@ uwcEvent_t uwc_event_nvs_write_pasw(void);
  * @brief Erase PASW from NVS.
  */
 uwcEvent_t uwc_event_nvs_erase_pasw(void);
+
+/**
+ * @brief Read uwcCamFrameSize from NVS.
+ */
+uwcEvent_t uwc_event_nvs_read_framesize(void);
+
+/**
+ * @brief Write uwcCamFrameSize from NVS.
+ */
+uwcEvent_t uwc_event_nvs_write_framesize(void);
+
+/**
+ * @brief Erase uwcCamFrameSize from NVS.
+ */
+uwcEvent_t uwc_event_nvs_erase_framesize(void);
+
+/**
+ * @brief Read uwcCamJpegCompression from NVS.
+ */
+uwcEvent_t uwc_event_nvs_read_jpeglevel(void);
+
+/**
+ * @brief Write uwcCamJpegCompression from NVS.
+ */
+uwcEvent_t uwc_event_nvs_write_jpeglevel(void);
+
+/**
+ * @brief Erase uwcCamJpegCompression from NVS.
+ */
+uwcEvent_t uwc_event_nvs_erase_jpeglevel(void);
 
 /**
  * @brief Commit changes WiFi auth into NVS.

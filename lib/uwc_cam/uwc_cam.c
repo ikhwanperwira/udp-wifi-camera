@@ -2,8 +2,11 @@
 
 static esp_err_t err;
 
+char uwcCamFrameSize[8] = "7";
+char uwcCamJpegCompression[8] = "8";
+
 // Default camera config OV2640.
-static const camera_config_t uwcCamCfg = {
+static camera_config_t uwcCamCfg = {
     .pin_pwdn = CAM_PIN_PWDN,
     .pin_reset = CAM_PIN_RESET,
     .pin_xclk = CAM_PIN_XCLK,
@@ -33,8 +36,8 @@ static const camera_config_t uwcCamCfg = {
     .jpeg_quality = 8,  // 0-63 lower number means higher quality
     .fb_count =
         2,  // if more than one, i2s runs in continuous mode. Use only with JPEG
-    .grab_mode = CAMERA_GRAB_WHEN_EMPTY  // CAMERA_GRAB_LATEST. Sets when
-                                         // buffers should be filled
+    .grab_mode = CAMERA_GRAB_LATEST  // CAMERA_GRAB_LATEST. Sets when
+                                     // buffers should be filled
 };
 
 bool uwcCamIsInit = false;
@@ -45,6 +48,9 @@ esp_err_t uwc_cam_init(void) {
     ESP_LOGW(uwc_tag_cam, "Camera already initialized!");
     return ESP_OK;
   }
+
+  uwcCamCfg.frame_size = atoi(uwcCamFrameSize);
+  uwcCamCfg.jpeg_quality = atoi(uwcCamJpegCompression);
 
   err = esp_camera_init(&uwcCamCfg);
 

@@ -25,7 +25,10 @@
     "projdefs.h": "c",
     "condition_variable": "c",
     "future": "c",
-    "stdbool.h": "c"
+    "stdbool.h": "c",
+    "chrono": "c",
+    "ctime": "c",
+    "mutex": "c"
   },
   "files.eol": "\n"
 }

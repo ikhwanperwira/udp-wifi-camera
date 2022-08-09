@@ -20,6 +20,11 @@ extern const char uwc_tag[];
 extern const char uwc_tag_led[];
 
 /**
+ * @brief Flashlight tag for ESP_LOG usage.
+ */
+extern const char uwc_tag_flashlight[];
+
+/**
  * @brief Camera tag for ESP_LOG usage.
  */
 extern const char uwc_tag_cam[];

@@ -101,7 +101,7 @@ int uwc_udp_recv(void) {
 
   if (uwcUdpBufRXLen < 0) {
     // ESP_LOGE(uwc_tag_udp, "recvfrom failed: errno %d", errno);
-    uwcUdpTimeoutCount++;
+    if (uwcUdpTimeout.tv_sec != 0) uwcUdpTimeoutCount++;
     // ESP_LOGW(uwc_tag_udp, "Timeout Counter: %i", uwcUdpTimeoutCount);
     return 0;
   }

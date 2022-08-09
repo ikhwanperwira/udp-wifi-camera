@@ -36,8 +36,8 @@ static camera_config_t uwcCamCfg = {
     .jpeg_quality = 8,  // 0-63 lower number means higher quality
     .fb_count =
         2,  // if more than one, i2s runs in continuous mode. Use only with JPEG
-    .grab_mode = CAMERA_GRAB_LATEST  // CAMERA_GRAB_LATEST. Sets when
-                                     // buffers should be filled
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY  // CAMERA_GRAB_LATEST. Sets when
+                                         // buffers should be filled
 };
 
 bool uwcCamIsInit = false;

@@ -12,6 +12,7 @@
 #include "esp_err.h"
 #include "uwc_cam.h"
 #include "uwc_eolremover.h"
+#include "uwc_flashlight.h"
 #include "uwc_led.h"
 #include "uwc_nvs.h"
 #include "uwc_tag.h"
@@ -19,10 +20,11 @@
 #include "uwc_uart.h"
 #include "uwc_udp.h"
 #include "uwc_wifi.h"
-#include "zlib.h"
+// #include "zlib.h"
 
 // Type for uwcEvent_t
 typedef void uwcEvent_t;
+extern bool uwcCamIsTaskStart;
 
 // Error variable that will be usage by any event.
 esp_err_t uwcEventErr;
@@ -43,6 +45,21 @@ uwcEvent_t uwc_event_led_set_on(void);
 uwcEvent_t uwc_event_led_set_off(void);
 
 /**
+ * @brief initializing built-in Flashlight.
+ */
+uwcEvent_t uwc_event_flashlight_init(void);
+
+/**
+ * @brief Set off Flashlight.
+ */
+uwcEvent_t uwc_event_flashlight_set_on(void);
+
+/**
+ * @brief Set off Flashlight.
+ */
+uwcEvent_t uwc_event_flashlight_set_off(void);
+
+/**
  * @brief Init camera.
  */
 uwcEvent_t uwc_event_cam_init(void);
@@ -61,6 +78,11 @@ uwcEvent_t uwc_event_cam_grab(void);
  * @brief Stream frame buffer through UDP socket.
  */
 uwcEvent_t uwc_event_cam_stream(void);
+
+/**
+ * @brief Kill camera stream task and deinit camera.
+ */
+uwcEvent_t uwc_event_cam_kill(void);
 
 /**
  * @brief Setup camera configuration through UART, deinit then init to apply

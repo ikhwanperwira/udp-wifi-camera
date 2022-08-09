@@ -6,16 +6,20 @@ uwcTask_t uwc_task_udp(void *udpFlag) {
   ESP_ERROR_CHECK(uwc_udp_init());
 
   for (;;) {
+    if (uwcCamIsTaskStart) {
+      vTaskDelay(500 / portTICK_PERIOD_MS);
+    } else {
+      if (!(uwcUdpTimeoutCount % 10)) {
+        ESP_LOGW(uwc_tag_task, "No ACK from server, reinit UDP...");
+        ESP_ERROR_CHECK(uwc_udp_init());
+      }
+    }
+
     if (!uwcWifiIsInit) {
       continue;
     }
 
     uwc_udp_recv();
-
-    if (!(uwcUdpTimeoutCount % 10)) {
-      ESP_LOGW(uwc_tag_task, "No ACK from server, reinit UDP...");
-      ESP_ERROR_CHECK(uwc_udp_init());
-    }
 
     // NVS handler.
     uwc_udp_on("$nvs init\n", uwc_event_nvs_init, NULL);
@@ -34,11 +38,17 @@ uwcTask_t uwc_task_udp(void *udpFlag) {
     uwc_udp_on("$led on\n", uwc_event_led_set_on, NULL);
     uwc_udp_on("$led off\n", uwc_event_led_set_off, NULL);
 
+    // Flashlight handler.
+    uwc_udp_on("$flash init\n", uwc_event_flashlight_init, NULL);
+    uwc_udp_on("$flash on\n", uwc_event_flashlight_set_on, NULL);
+    uwc_udp_on("$flash off\n", uwc_event_flashlight_set_off, NULL);
+
     // Cam handler.
     uwc_udp_on("$cam init\n", uwc_event_cam_init, NULL);
     uwc_udp_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
     uwc_udp_on("$cam grab\n", uwc_event_cam_grab, NULL);
     uwc_udp_on("$cam stream\n", uwc_event_cam_stream, NULL);
+    uwc_udp_on("$cam kill\n", uwc_event_cam_kill, NULL);
     uwc_udp_on("$cam setup\n", uwc_event_cam_setup_with_udp, NULL);
 
     // WiFi handler.

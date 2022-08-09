@@ -22,10 +22,17 @@ uwcTask_t uwc_task_uart(void *uartFlag) {
     uwc_uart_on("$led on\n", uwc_event_led_set_on, NULL);
     uwc_uart_on("$led off\n", uwc_event_led_set_off, NULL);
 
+    // Flashlight handler.
+    uwc_uart_on("$flash init\n", uwc_event_flashlight_init, NULL);
+    uwc_uart_on("$flash on\n", uwc_event_flashlight_set_on, NULL);
+    uwc_uart_on("$flash off\n", uwc_event_flashlight_set_off, NULL);
+
     // Cam handler.
     uwc_uart_on("$cam init\n", uwc_event_cam_init, NULL);
     uwc_uart_on("$cam deinit\n", uwc_event_cam_deinit, NULL);
     uwc_uart_on("$cam grab\n", uwc_event_cam_grab, NULL);
+    uwc_uart_on("$cam stream\n", uwc_event_cam_stream, NULL);
+    uwc_uart_on("$cam kill\n", uwc_event_cam_kill, NULL);
     uwc_uart_on("$cam setup\n", uwc_event_cam_setup_with_uart, NULL);
 
     // WiFi handler.
@@ -49,7 +56,7 @@ uwcTask_t uwc_task_uart(void *uartFlag) {
       uwc_uart_send("Restarting program...\n");
       esp_restart();
     }
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
   ESP_LOGW(uwc_tag_task, "Exited!");
   vTaskDelete(NULL);

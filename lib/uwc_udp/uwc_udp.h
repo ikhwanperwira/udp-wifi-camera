@@ -37,7 +37,7 @@ extern bool uwcUdpIsInit;        // UDP init status.
 extern u8_t uwcUdpTimeoutCount;  // Timeout counted when no data received.
 
 /**
- * @brief Set target UDP server port.
+ * @brief Set timeout receive.
  * @param sec: second.
  * @param usec: nanosecond.
  * @return

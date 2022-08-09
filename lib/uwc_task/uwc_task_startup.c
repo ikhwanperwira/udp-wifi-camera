@@ -1,6 +1,6 @@
 #include "uwc_task.h"
 
-uwcTask_t uwc_task_startup() {
+uwcTask_t uwc_task_startup(void) {
   uwc_event_nvs_init();
   uwc_event_nvs_open();
   uwc_event_nvs_read_ssid();

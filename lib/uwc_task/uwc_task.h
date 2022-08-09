@@ -19,7 +19,7 @@ typedef void *uwcTaskHandle_t;
 /**
  * @brief Task when OS is starting up.
  */
-uwcTask_t uwc_task_startup();
+uwcTask_t uwc_task_startup(void);
 
 /**
  * @brief Task for handle every command through UART.
@@ -35,5 +35,15 @@ uwcTask_t uwc_task_udp(void *udpFlag);
  * @brief Handle for uwc_task_udp.
  */
 uwcTaskHandle_t uwc_task_handle_udp;
+
+/**
+ * @brief Task for camera streaming.
+ */
+uwcTask_t uwc_task_camera(void *cameraFlag);
+
+/**
+ * @brief Handle for uwc_task_camera
+ */
+uwcTaskHandle_t uwc_task_handle_camera;
 
 #endif

@@ -10,7 +10,7 @@ def receiveData():
   global CLNT_ADDR
   global dataRecv
   while 1:
-    dataRecv, CLNT_ADDR = udpSock.recvfrom(1024)
+    dataRecv, CLNT_ADDR = udpSock.recvfrom(1357)
     print(dataRecv, CLNT_ADDR)
 
 recvThread = threading.Thread(target=receiveData)

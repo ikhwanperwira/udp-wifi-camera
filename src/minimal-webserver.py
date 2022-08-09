@@ -13,7 +13,7 @@ def frame_collector(clients):
     while 1:
       dataRecv, CLNT_ADDR = udpSock.recvfrom(2048)
 
-      if LOCK_CLNT_ADDR == CLNT_ADDR:
+      if LOCK_CLNT_ADDR == CLNT_ADDR or True:
         if not isWriting:
           if dataRecv[:2] == b'\xff\xd8': # Start of JPEG
             isWriting = True
@@ -42,16 +42,16 @@ def frame_collector(clients):
 
 def flask_service(clients): # process 2
   from flask import Flask, Response
-  from time import time
+  from time import time_ns
   app = Flask(__name__)
 
   def frame_consumer():
     receiver, sender = Pipe(False)
     clients[sender._handle] = sender
     while True:
-      t0 = time()
+      t0 = time_ns()
       yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + receiver.recv() + b'\r\n'
-      print(1/ (time() - t0))
+      print(1/ (time_ns() - t0) * 1000000000)
 
   @app.route('/mjpeg')
   def mjpeg():

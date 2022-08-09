@@ -156,6 +156,7 @@ uwcEvent_t uwc_event_cam_kill(void) {
   if (uwcUdpIsInit && !uwcEventErr) {
     uwc_udp_send("Camera task has been killed!\n");
   }
+  uwc_udp_set_timeout(1, 0);
   uwcCamIsTaskStart = false;
 }
 

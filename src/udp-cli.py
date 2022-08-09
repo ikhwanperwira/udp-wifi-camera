@@ -1,5 +1,5 @@
 import socket, threading
-SERV_IPV4, SERV_PORT = ("192.168.145.200", 39876)
+SERV_IPV4, SERV_PORT = ("192.168.43.150", 39876)
 udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 udpSock.bind((SERV_IPV4,SERV_PORT))
 

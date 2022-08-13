@@ -1,7 +1,5 @@
 #include "uwc_event.h"
 
-bool uwcCamIsTaskStart = false;
-
 uwcEvent_t uwc_event_cam_init(void) {
   if (uwcCamIsInit) {
     ESP_LOGW(uwc_tag_event, "Camera already initialized!");
@@ -38,7 +36,11 @@ uwcEvent_t uwc_event_cam_deinit(void) {
 
   uwc_event_cam_kill();
 
-  if (uwcUdpIsInit && !uwcEventErr) {
+  if (uwcUdpIsInit) {
+    if (uwcEventErr) {
+      uwc_udp_send("Camera deinit failed!\n");
+      return;
+    }
     uwc_udp_send("Camera has been deinitialized!\n");
   }
 }
@@ -53,6 +55,10 @@ uwcEvent_t uwc_event_cam_grab(void) {
       return;
     }
   }
+
+  /*
+    Temporary disable for zlib implementation.
+  */
 
   // char compressedFb[16384];
 
@@ -90,15 +96,13 @@ uwcEvent_t uwc_event_cam_grab(void) {
   ESP_LOGI(uwc_tag_event, "Camera capture test OK with size: %u",
            uwcCamFb->len);
 
-  ESP_LOGI(uwc_tag_event, "Camera capture OK with size: %u", uwcCamFb->len);
-
   register uint8_t *from = uwcCamFb->buf;
   register size_t toSend = uwcCamFb->len;
-
-  for (int i = 0; toSend > 0; i++) {
-    size_t sendSize = toSend > UDP_BUF_SIZE ? UDP_BUF_SIZE : toSend;
+  while (toSend > 0) {
+    register size_t sendSize = toSend > UDP_BUF_SIZE ? UDP_BUF_SIZE : toSend;
     while (uwc_udp_send_raw(from, sendSize) < 0) {
-      ESP_LOGW(uwc_tag_event, "Retry in itteration: %i", i);
+      ESP_LOGW(uwc_tag_event, "Error send, remaining to send: %u, retrying...",
+               toSend);
     }
     toSend -= sendSize;
     from += sendSize;
@@ -133,8 +137,8 @@ uwcEvent_t uwc_event_cam_stream(void) {
   uwc_cam_close();
 
   ESP_LOGI(uwc_tag_event, "Creating camera stream task...");
-  xTaskCreate(uwc_task_camera, "uwc_task_camera", 16384, NULL,
-              configMAX_PRIORITIES, &uwc_task_handle_camera);
+  xTaskCreate(uwc_task_cam, "uwc_task_cam", 16384, NULL,
+              configMAX_PRIORITIES - 1, &uwc_task_handle_cam);
   ESP_LOGI(uwc_tag_event, "Create camera stream task done!");
   uwc_udp_set_timeout(0, 0);
   uwcCamIsTaskStart = true;
@@ -142,20 +146,19 @@ uwcEvent_t uwc_event_cam_stream(void) {
 
 uwcEvent_t uwc_event_cam_kill(void) {
   if (!uwcCamIsTaskStart) {
-    ESP_LOGW(uwc_tag_event, "Already killed!");
+    ESP_LOGW(uwc_tag_event, "Camera stream task already killed!");
     return;
   }
+
   ESP_LOGI(uwc_tag_event, "Killing camera stream task...");
-  vTaskDelete(uwc_task_handle_camera);
+  vTaskDelete(uwc_task_handle_cam);
   uwcEventErr = uwc_cam_deinit();
   if (uwcEventErr) {
     ESP_LOGE(uwc_tag_event, "Camera kill failed!");
     return;
   }
   ESP_LOGI(uwc_tag_event, "Killing camera stream task done!");
-  if (uwcUdpIsInit && !uwcEventErr) {
-    uwc_udp_send("Camera task has been killed!\n");
-  }
+  if (uwcUdpIsInit) uwc_udp_send("Camera task has been killed!\n");
   uwc_udp_set_timeout(1, 0);
   uwcCamIsTaskStart = false;
 }

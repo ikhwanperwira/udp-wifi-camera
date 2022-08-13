@@ -56,7 +56,7 @@ esp_err_t uwc_cam_deinit(void);
 esp_err_t uwc_cam_open(void);
 
 /**
- * @brief Close camera, make sure call this before reuse new frame buffer.
+ * @brief Close camera, make sure call this before reuse uwcCamFb.
  */
 void uwc_cam_close(void);
 

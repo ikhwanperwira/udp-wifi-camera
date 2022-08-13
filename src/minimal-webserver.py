@@ -1,10 +1,10 @@
 from multiprocessing import Pipe
 
 def frame_collector(clients):
-  import io
-  import socket
-  SERV_IPV4, SERV_PORT = ('192.168.145.200', 39876)
-  udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  from io import BytesIO
+  from socket import socket, AF_INET, SOCK_DGRAM
+  SERV_IPV4, SERV_PORT = ('192.168.43.150', 39876)
+  udpSock = socket(AF_INET,SOCK_DGRAM)
   udpSock.bind((SERV_IPV4,SERV_PORT))
   isWriting = False
   LOCK_CLNT_ADDR = None
@@ -17,7 +17,7 @@ def frame_collector(clients):
         if not isWriting:
           if dataRecv[:2] == b'\xff\xd8': # Start of JPEG
             isWriting = True
-            buf = io.BytesIO()
+            buf = BytesIO()
 
         if isWriting:
           buf.write(dataRecv)
@@ -62,7 +62,7 @@ def flask_service(clients): # process 2
     return """
     """
 
-  app.run(host='192.168.145.200', threaded=True)
+  app.run(host='192.168.43.150', threaded=True)
 
 if __name__ == '__main__':
   from multiprocessing import Process, Manager

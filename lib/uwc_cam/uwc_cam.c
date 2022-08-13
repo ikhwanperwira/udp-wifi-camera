@@ -1,9 +1,11 @@
 #include "uwc_cam.h"
 
-static esp_err_t err;
-
 char uwcCamFrameSize[8] = "7";
 char uwcCamJpegCompression[8] = "8";
+bool uwcCamIsInit = false;
+camera_fb_t* uwcCamFb = NULL;
+
+static esp_err_t err;
 
 // Default camera config OV2640.
 static camera_config_t uwcCamCfg = {
@@ -24,7 +26,7 @@ static camera_config_t uwcCamCfg = {
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
 
-    .xclk_freq_hz = 10000000,  // EXPERIMENTAL: Set to 16MHz on ESP32-S2 or
+    .xclk_freq_hz = 12000000,  // EXPERIMENTAL: Set to 16MHz on ESP32-S2 or
                                // ESP32-S3 to enable EDMA mode
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
@@ -40,27 +42,25 @@ static camera_config_t uwcCamCfg = {
                                          // buffers should be filled
 };
 
-bool uwcCamIsInit = false;
-camera_fb_t* uwcCamFb = NULL;
-
 esp_err_t uwc_cam_init(void) {
   if (uwcCamIsInit) {
     ESP_LOGW(uwc_tag_cam, "Camera already initialized!");
     return ESP_OK;
   }
 
-  uwcCamCfg.frame_size = atoi(uwcCamFrameSize);
-  uwcCamCfg.jpeg_quality = atoi(uwcCamJpegCompression);
+  uwcCamCfg.frame_size = atoi(uwcCamFrameSize) ? atoi(uwcCamFrameSize) : 4;
+  uwcCamCfg.jpeg_quality =
+      atoi(uwcCamJpegCompression) ? atoi(uwcCamJpegCompression) : 4;
 
   err = esp_camera_init(&uwcCamCfg);
 
-  if (!err) {
-    ESP_LOGI(uwc_tag_cam, "Camera has been initialized!");
-    uwcCamIsInit = true;
+  if (err) {
+    ESP_LOGE(uwc_tag_cam, "Camera init failure!");
     return err;
   }
 
-  ESP_LOGE(uwc_tag_cam, "Camera init failure!");
+  ESP_LOGI(uwc_tag_cam, "Camera has been initialized!");
+  uwcCamIsInit = true;
   return err;
 }
 
@@ -72,24 +72,24 @@ esp_err_t uwc_cam_deinit(void) {
 
   err = esp_camera_deinit();
 
-  if (!err) {
-    ESP_LOGI(uwc_tag_cam, "Camera has been deinitialized!");
-    uwcCamIsInit = false;
+  if (err) {
+    ESP_LOGE(uwc_tag_cam, "Camera deinit failure!");
     return err;
   }
 
-  ESP_LOGE(uwc_tag_cam, "Camera deinit failure!");
+  ESP_LOGI(uwc_tag_cam, "Camera has been deinitialized!");
+  uwcCamIsInit = false;
   return err;
 }
 
 esp_err_t uwc_cam_open(void) {
   uwcCamFb = esp_camera_fb_get();
-  if (!uwcCamFb) {
-    ESP_LOGW(uwc_tag_cam, "Camera capture failed!");
-    return ESP_FAIL;
+  if (uwcCamFb) {
+    return ESP_OK;
   }
 
-  return ESP_OK;
+  ESP_LOGW(uwc_tag_cam, "Camera capture failed!");
+  return ESP_FAIL;
 }
 
 void uwc_cam_close(void) { esp_camera_fb_return(uwcCamFb); }

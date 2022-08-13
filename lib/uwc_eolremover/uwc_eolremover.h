@@ -13,6 +13,7 @@
 
 /**
  * @brief remove CR or LF or CRLF character in end of string.
+ * @param src: Source of the string.
  */
 void uwc_eol_remover(char* src);
 

@@ -1,9 +1,11 @@
 #include "uwc_task.h"
 
 uwcTaskHandle_t uwc_task_handle_udp = NULL;
+bool uwcUdpIsTaskStart = false;
 
 uwcTask_t uwc_task_udp(void *udpFlag) {
   ESP_ERROR_CHECK(uwc_udp_init());
+  uwcUdpIsTaskStart = true;
 
   for (;;) {
     if (uwcCamIsTaskStart) {

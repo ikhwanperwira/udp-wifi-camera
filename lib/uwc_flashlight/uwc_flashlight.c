@@ -13,14 +13,14 @@ esp_err_t uwc_flashlight_init(void) {
   gpio_pad_select_gpio(ESP32CAM_PIN_BUILT_IN_FLASHLIGHT);
   err = gpio_set_direction(ESP32CAM_PIN_BUILT_IN_FLASHLIGHT, GPIO_MODE_OUTPUT);
 
-  if (!err) {
-    ESP_LOGI(uwc_tag_flashlight, "Flashlight has been initialized!");
-    uwcFlashlightIsInit = true;
+  if (err) {
+    uwcFlashlightIsInit = false;
+    ESP_LOGE(uwc_tag_flashlight, "Flashlight init failure!");
     return err;
   }
 
-  uwcFlashlightIsInit = false;
-  ESP_LOGE(uwc_tag_flashlight, "Flashlight init failure!");
+  ESP_LOGI(uwc_tag_flashlight, "Flashlight has been initialized!");
+  uwcFlashlightIsInit = true;
   return err;
 }
 
@@ -34,11 +34,11 @@ esp_err_t uwc_flashlight_set(bool state) {
 
   err = gpio_set_level(ESP32CAM_PIN_BUILT_IN_FLASHLIGHT, state);
 
-  if (!err) {
+  if (err) {
     ESP_LOGI(uwc_tag_flashlight, "Flashlight has been set!");
     return err;
   }
 
-  ESP_LOGE(uwc_tag_flashlight, "Flashlight has been set!");
+  ESP_LOGE(uwc_tag_flashlight, "Flashlight set failure!");
   return err;
 }

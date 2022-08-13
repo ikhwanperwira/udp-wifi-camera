@@ -24,9 +24,8 @@
 
 // Type for uwcEvent_t
 typedef void uwcEvent_t;
-extern bool uwcCamIsTaskStart;
 
-// Error variable that will be usage by any event.
+// Error variable that maybe change after calling last event.
 esp_err_t uwcEventErr;
 
 /**

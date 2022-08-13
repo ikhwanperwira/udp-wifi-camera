@@ -12,6 +12,10 @@
 #include "freertos/projdefs.h"
 #include "uwc_event.h"
 
+// Task start status.
+extern bool uwcCamIsTaskStart;
+extern bool uwcUdpIsTaskStart;
+
 // Type for uwc task.
 typedef void uwcTask_t;
 typedef void *uwcTaskHandle_t;
@@ -39,11 +43,11 @@ uwcTaskHandle_t uwc_task_handle_udp;
 /**
  * @brief Task for camera streaming.
  */
-uwcTask_t uwc_task_camera(void *cameraFlag);
+uwcTask_t uwc_task_cam(void *camFlag);
 
 /**
- * @brief Handle for uwc_task_camera
+ * @brief Handle for uwc_task_cam
  */
-uwcTaskHandle_t uwc_task_handle_camera;
+uwcTaskHandle_t uwc_task_handle_cam;
 
 #endif

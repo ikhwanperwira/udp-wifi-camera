@@ -1,33 +1,31 @@
 #include "uwc_event.h"
 
-static bool isUdpTaskStart = false;
-
 uwcEvent_t uwc_event_udp_kill(void) {
-  if (!isUdpTaskStart) {
-    ESP_LOGW(uwc_tag_event, "Already killed!");
+  if (!uwcUdpIsTaskStart) {
+    ESP_LOGW(uwc_tag_event, "UDP task already killed!");
     return;
   }
   ESP_LOGI(uwc_tag_event, "Killing UDP task...");
   uwcUdpTimeoutCount = 1;
   uwcUdpIsInit = false;
-  isUdpTaskStart = false;
+  uwcUdpIsTaskStart = false;
   vTaskDelete(uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Kill UDP task done!");
 }
 
 uwcEvent_t uwc_event_udp_killself(void) {
-  if (!isUdpTaskStart) {
+  if (!uwcUdpIsTaskStart) {
     ESP_LOGW(uwc_tag_event, "Already killed!");
     return;
   }
   ESP_LOGI(uwc_tag_event, "Killing my self...");
   uwcUdpTimeoutCount = 1;
   uwcUdpIsInit = false;
-  isUdpTaskStart = false;
+  uwcUdpIsTaskStart = false;
 }
 
 uwcEvent_t uwc_event_udp_init(void) {
-  if (isUdpTaskStart) {
+  if (uwcUdpIsTaskStart) {
     ESP_LOGW(uwc_tag_event, "UDP task already started!");
     return;
   }
@@ -54,11 +52,11 @@ uwcEvent_t uwc_event_udp_init(void) {
   xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 2,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
-  isUdpTaskStart = true;
+  uwcUdpIsTaskStart = true;
 }
 
 uwcEvent_t uwc_event_udp_reinit(void) {
-  if (isUdpTaskStart) {
+  if (uwcUdpIsTaskStart) {
     ESP_LOGW(uwc_tag_event, "UDP task already started!");
     return;
   }
@@ -80,7 +78,7 @@ uwcEvent_t uwc_event_udp_reinit(void) {
   xTaskCreate(uwc_task_udp, "uwc_task_udp", 4096, NULL, 2,
               &uwc_task_handle_udp);
   ESP_LOGI(uwc_tag_event, "Create UDP task done!");
-  isUdpTaskStart = true;
+  uwcUdpIsTaskStart = true;
 }
 
 uwcEvent_t uwc_event_udp_send(void) {

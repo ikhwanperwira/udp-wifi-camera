@@ -1,6 +1,9 @@
 #include "uwc_task.h"
 
-uwcTask_t uwc_task_camera(void *cameraFlag) {
+uwcTaskHandle_t uwc_task_handle_cam = NULL;
+bool uwcCamIsTaskStart = false;
+
+uwcTask_t uwc_task_cam(void *camFlag) {
   for (;;) {                                // streaming video...
     camera_fb_t *fb = esp_camera_fb_get();  // Get frame buffer
     register uint8_t *from = fb->buf;

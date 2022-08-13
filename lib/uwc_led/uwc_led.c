@@ -13,14 +13,14 @@ esp_err_t uwc_led_init(void) {
   gpio_pad_select_gpio(ESP32CAM_PIN_BUILT_IN_LED);
   err = gpio_set_direction(ESP32CAM_PIN_BUILT_IN_LED, GPIO_MODE_OUTPUT);
 
-  if (!err) {
-    ESP_LOGI(uwc_tag_led, "LED has been initialized!");
-    uwcLedIsInit = true;
+  if (err) {
+    uwcLedIsInit = false;
+    ESP_LOGE(uwc_tag_led, "LED init failure!");
     return err;
   }
 
-  uwcLedIsInit = false;
-  ESP_LOGE(uwc_tag_led, "LED init failure!");
+  ESP_LOGI(uwc_tag_led, "LED has been initialized!");
+  uwcLedIsInit = true;
   return err;
 }
 
@@ -33,11 +33,11 @@ esp_err_t uwc_led_set(bool state) {
 
   err = gpio_set_level(ESP32CAM_PIN_BUILT_IN_LED, state);
 
-  if (!err) {
-    ESP_LOGI(uwc_tag_led, "LED has been set!");
+  if (err) {
+    ESP_LOGE(uwc_tag_led, "LED set failure!");
     return err;
   }
 
-  ESP_LOGE(uwc_tag_led, "LED has been set!");
+  ESP_LOGI(uwc_tag_led, "LED has been set!");
   return err;
 }

@@ -39,7 +39,14 @@ extern char WIFI_PASW[32];
 tcpip_adapter_ip_info_t uwcWifiIpInfo;  // IP when connected to AP.
 extern bool uwcWifiIsInit;              // WiFI initialization status.
 
+/**
+ * @brief WiFi STA init.
+ */
 esp_err_t uwc_wifi_init_sta(void);
+
+/**
+ * @brief WiFi STA deinit (still bug).
+ */
 esp_err_t uwc_wifi_deinit_sta(void);
 
 #endif

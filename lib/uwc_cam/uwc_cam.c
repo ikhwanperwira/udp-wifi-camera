@@ -1,6 +1,6 @@
 #include "uwc_cam.h"
 
-char uwcCamFrameSize[8] = "7";
+char uwcCamFrameSize[8] = "6";
 char uwcCamJpegCompression[8] = "8";
 bool uwcCamIsInit = false;
 camera_fb_t* uwcCamFb = NULL;
@@ -26,7 +26,7 @@ static camera_config_t uwcCamCfg = {
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
 
-    .xclk_freq_hz = 12000000,  // EXPERIMENTAL: Set to 16MHz on ESP32-S2 or
+    .xclk_freq_hz = 10000000,  // EXPERIMENTAL: Set to 16MHz on ESP32-S2 or
                                // ESP32-S3 to enable EDMA mode
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,

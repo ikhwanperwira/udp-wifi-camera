@@ -31,7 +31,6 @@
 #define WIFI_FAIL_BIT BIT1
 
 // WiFI Setup
-#define WIFI_AUTH WIFI_AUTH_WPA2_PSK
 #define MAX_TRY 20
 
 extern char WIFI_SSID[32];

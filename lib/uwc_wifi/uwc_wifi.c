@@ -60,12 +60,12 @@ esp_err_t uwc_wifi_init_sta(void) {
   ESP_ERROR_CHECK(esp_event_handler_instance_register(
       IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, &instance_got_ip));
 
-  wifi_config_t wifi_config = {
-      .sta =
-          {
-              .threshold.authmode = WIFI_AUTH,
-          },
-  };
+  wifi_config_t wifi_config;
+  if (strcpy(&WIFI_PASW[0], "NULL")) {
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+  } else {
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+  }
 
   strncpy((char *)wifi_config.sta.ssid, (char *)&WIFI_SSID[0], 32);
   strncpy((char *)wifi_config.sta.password, (char *)&WIFI_PASW[0], 64);

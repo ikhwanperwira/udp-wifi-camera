@@ -35,10 +35,10 @@ esp_err_t uwc_flashlight_set(bool state) {
   err = gpio_set_level(ESP32CAM_PIN_BUILT_IN_FLASHLIGHT, state);
 
   if (err) {
-    ESP_LOGI(uwc_tag_flashlight, "Flashlight has been set!");
+    ESP_LOGE(uwc_tag_flashlight, "Flashlight set failure!");
     return err;
   }
 
-  ESP_LOGE(uwc_tag_flashlight, "Flashlight set failure!");
+  ESP_LOGI(uwc_tag_flashlight, "Flashlight has been set!");
   return err;
 }

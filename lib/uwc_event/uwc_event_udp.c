@@ -43,9 +43,10 @@ uwcEvent_t uwc_event_udp_init(void) {
     uwc_event_udp_kill();
   }
 
-  char gw[16];
-  sprintf(gw, IPSTR, IP2STR(&uwcWifiIpInfo.gw));
-  strcpy(SERV_IPV4, gw);
+  char bc[16];
+  uint32_t broadcastIP = uwcWifiIpInfo.ip.addr | (~uwcWifiIpInfo.netmask.addr);
+  sprintf(bc, "%s", inet_ntoa(broadcastIP));
+  strcpy(SERV_IPV4, bc);
   SERV_PORT = 39876;
 
   ESP_LOGI(uwc_tag_event, "Creating UDP task...");

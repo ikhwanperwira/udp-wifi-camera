@@ -25,13 +25,16 @@ uwcEvent_t uwc_event_wifi_info(void) {
     return;
   }
 
-  if (!tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &uwcWifiIpInfo)) {
+  if (!esp_netif_get_ip_info(uwcWifiStaNetif, &uwcWifiIpInfo)) {
     ESP_LOGI(uwc_tag_event, "IPV4 -> " IPSTR, IP2STR(&uwcWifiIpInfo.ip));
     ESP_LOGI(uwc_tag_event, "GTWY -> " IPSTR, IP2STR(&uwcWifiIpInfo.gw));
     ESP_LOGI(uwc_tag_event, "NETM -> " IPSTR, IP2STR(&uwcWifiIpInfo.netmask));
     ESP_LOGI(uwc_tag_event, "SSID -> %s", WIFI_SSID);
     ESP_LOGI(uwc_tag_event, "PASW -> %s", WIFI_PASW);
+    return;
   }
+
+  ESP_LOGE(uwc_tag_event, "WIFi get info failure!");
 }
 
 uwcEvent_t uwc_event_wifi_setup_with_uart(void) {

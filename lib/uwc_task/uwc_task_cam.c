@@ -11,10 +11,7 @@ uwcTask_t uwc_task_cam(void *camFlag) {
 
     while (toSend > 0) {  // Sending packet per packet...
       register size_t sendSize = toSend > UDP_BUF_SIZE ? UDP_BUF_SIZE : toSend;
-      while (uwc_udp_send_raw(from, sendSize) < 0) {
-        ESP_LOGW(uwc_tag_event,
-                 "Error send, remaining to send: %u, retrying...", toSend);
-      }
+      uwc_udp_send_raw(from, sendSize);
       toSend -= sendSize;
       from += sendSize;
     }

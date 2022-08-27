@@ -35,8 +35,9 @@
 
 extern char WIFI_SSID[32];
 extern char WIFI_PASW[32];
-tcpip_adapter_ip_info_t uwcWifiIpInfo;  // IP when connected to AP.
-extern bool uwcWifiIsInit;              // WiFI initialization status.
+esp_netif_t* uwcWifiStaNetif;
+esp_netif_ip_info_t uwcWifiIpInfo;  // IP when connected to AP.
+extern bool uwcWifiIsInit;          // WiFI initialization status.
 
 /**
  * @brief WiFi STA init.

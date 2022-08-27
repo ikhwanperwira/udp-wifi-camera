@@ -28,7 +28,8 @@
     "stdbool.h": "c",
     "chrono": "c",
     "ctime": "c",
-    "mutex": "c"
+    "mutex": "c",
+    "*.ipp": "c"
   },
   "files.eol": "\n"
 }

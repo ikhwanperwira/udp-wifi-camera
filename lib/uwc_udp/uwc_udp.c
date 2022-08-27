@@ -19,10 +19,31 @@ u8_t uwcUdpTimeoutCount = 1;
 
 void uwc_udp_handshake() {
   ESP_LOGW(uwc_tag_udp, "Sending SYN to %s:%d", SERV_IPV4, SERV_PORT);
-  do {  // Handshaking...
+  // do {  // Handshaking...
+  //   uwc_udp_send("SYN\n");
+  //   uwc_udp_recv();
+  // } while (!uwc_udp_is_data_match("ACK\n"));
+  while (1) {  // handshaking...
     uwc_udp_send("SYN\n");
     uwc_udp_recv();
-  } while (!uwc_udp_is_data_match("ACK\n"));
+    if (uwc_udp_is_data_match("ACK\n")) {
+      char sourceIP[16];
+      char msg[64];
+      struct sockaddr_in* sin = (struct sockaddr_in*)&sourceAddr;
+      u16_t sourcePort = ntohs((u16_t)sin->sin_port);
+      inet_ntop(sin->sin_family, &sin->sin_addr, sourceIP, 16);
+      sprintf(msg, "ACK from %s:%d\n", sourceIP, sourcePort);
+      uwc_udp_send(&msg[0]);
+
+      strcpy(SERV_IPV4, sourceIP);
+      SERV_PORT = sourcePort;
+      destAddr.sin_addr.s_addr = inet_addr(SERV_IPV4);
+      destAddr.sin_family = AF_INET;
+      destAddr.sin_port = htons(SERV_PORT);
+
+      break;
+    }
+  }
 }
 
 void uwc_udp_set_timeout(u8_t sec, u8_t usec) {
